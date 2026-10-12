@@ -1,0 +1,55 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/learn/learn",
+    "pages/review/review",
+    "pages/progress/progress",
+    "pages/mine/mine",
+    "pages/video/video",
+    "pages/admin/admin"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#6D59EB",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "星星英语",
+    "backgroundColor": "#F5F3FF",
+    "backgroundTextStyle": "dark"
+  },
+  "networkTimeout": {
+    "request": 120000
+  },
+  "tabBar": {
+    "color": "#9CA3AF",
+    "selectedColor": "#6D59EB",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "assets/tabbar/home.png",
+        "selectedIconPath": "assets/tabbar/home-active.png"
+      },
+      {
+        "pagePath": "pages/review/review",
+        "text": "复习",
+        "iconPath": "assets/tabbar/review.png",
+        "selectedIconPath": "assets/tabbar/review-active.png"
+      },
+      {
+        "pagePath": "pages/progress/progress",
+        "text": "进度",
+        "iconPath": "assets/tabbar/progress.png",
+        "selectedIconPath": "assets/tabbar/progress-active.png"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的",
+        "iconPath": "assets/tabbar/mine.png",
+        "selectedIconPath": "assets/tabbar/mine-active.png"
+      }
+    ]
+  },
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}

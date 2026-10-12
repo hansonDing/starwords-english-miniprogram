@@ -1,0 +1,86 @@
+<view class="page">
+  <view class="card intro-card">
+    <text class="card-title">家长上传 · 动画管理</text>
+    <text class="card-note">一周 7 天，每天一段。上传后孩子打开「每日动画」会按星期自动解锁，看过的还能回看。</text>
+  </view>
+
+  <!-- 检查中 -->
+  <view class="card" wx:if="{{checking}}">
+    <text class="card-note">正在确认家长身份…</text>
+  </view>
+
+  <!-- 未登录 -->
+  <view class="card" wx:elif="{{!loggedIn}}">
+    <text class="card-title">需要先登录</text>
+    <text class="card-note">登录后才能上传动画（上传的视频对孩子账号也可见）。</text>
+    <view class="btn-primary" bindtap="onGoLogin"><text>去「我的」页登录</text></view>
+  </view>
+
+  <!-- 已登录但还没绑定过管理员 -->
+  <view class="card" wx:elif="{{!bound}}">
+    <text class="card-title">设置家长账号</text>
+    <text class="card-note">输入家长口令，把当前登录的微信设为这台动画的唯一管理员。设置后只有这个微信能上传、替换或删除动画，孩子账号只能观看。</text>
+    <input
+      class="passcode-input"
+      value="{{passcode}}"
+      maxlength="24"
+      placeholder="请输入家长口令"
+      confirm-type="done"
+      bindinput="onPasscodeInput"
+      bindconfirm="onClaim"
+    />
+    <view class="btn-primary {{binding ? 'disabled' : ''}}" bindtap="onClaim">
+      <text>{{binding ? '绑定中…' : '设为家长账号'}}</text>
+    </view>
+    <text class="card-note tip">口令只在你手里，绑定后无法被其他账号抢走；如需更换管理员请找开发者重置。</text>
+  </view>
+
+  <!-- 已绑定，但不是当前账号 -->
+  <view class="card" wx:elif="{{!isAdmin}}">
+    <text class="card-title">仅家长可管理</text>
+    <text class="card-note">动画管理已经绑定到家长的微信账号，当前账号不是管理员。你可以去「每日动画」页观看，但上传、替换和删除都由家长完成。</text>
+  </view>
+
+  <!-- 管理员：7 天列表 -->
+  <block wx:else>
+    <view class="card">
+      <view class="day-row" wx:for="{{week}}" wx:key="dayIndex">
+        <view class="row-left">
+          <view class="row-head">
+            <text class="row-day">{{item.dayName}}</text>
+            <text class="today-tag" wx:if="{{item.isToday}}">今天</text>
+          </view>
+          <text class="row-title">{{item.title}}</text>
+          <text class="row-meta" wx:if="{{item.uploaded}}">已上传 {{item.sizeText}} · {{item.updatedText}}</text>
+          <text class="row-meta empty" wx:else>还没有视频</text>
+        </view>
+        <view class="row-right">
+          <view class="mini-btn" data-day="{{item.dayIndex}}" bindtap="onPickFile">
+            <text>{{item.uploaded ? '替换' : '上传'}}</text>
+          </view>
+          <view class="mini-btn danger" wx:if="{{item.uploaded}}" data-day="{{item.dayIndex}}" bindtap="onDelete">
+            <text>删除</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 说明 -->
+    <view class="card">
+      <text class="card-title">怎么上传</text>
+      <text class="step">1 · 点当天的「上传」，选「从手机相册选择视频」—— 最省事，直接选手机里的视频</text>
+      <text class="step">2 · 视频如果已经在聊天里，也可以选「从聊天记录里的文件选择」</text>
+      <text class="step">3 · 上传过程中停留在本页，不要切走</text>
+      <text class="card-note">建议 720P 以内、单段 50MB 以内，孩子加载更流畅。上传的视频存放在云存储，只有本应用登录用户能看。</text>
+      <text class="card-note warn">聊天里明明有视频却选不到？微信通过「相册」发出去的是视频消息、不是文件，选文件时不会出现。要么改用「文件」方式发送，要么直接走「从手机相册选择」。</text>
+    </view>
+  </block>
+
+  <!-- 忙碌遮罩 -->
+  <view class="busy-mask" wx:if="{{busy}}">
+    <view class="busy-box">
+      <text class="busy-text">{{busyText}}</text>
+      <text class="busy-tip">大文件请保持页面停留，不要退出</text>
+    </view>
+  </view>
+</view>

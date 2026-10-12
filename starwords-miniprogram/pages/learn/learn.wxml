@@ -1,0 +1,187 @@
+<!-- ============ 学习中 ============ -->
+<block wx:if="{{phase === 'learning'}}">
+  <!-- 顶部：进度点 -->
+  <view class="topbar">
+    <view class="dots">
+      <view
+        class="dot {{index < wordIndex || item.learned ? 'done' : index === wordIndex ? 'current' : ''}}"
+        wx:for="{{weekWordsView}}"
+        wx:key="id"
+      ></view>
+    </view>
+    <text class="step-label">第 {{step}}/3 步</text>
+  </view>
+
+  <!-- Step 1 · 听一听 -->
+  <view class="card main-card" wx:if="{{step === 1}}">
+    <text class="step-title">👀 看一看，听一听</text>
+    <view class="word-img sprite">
+      <image
+        class="sprite-img"
+        src="../../assets/sprite.jpg"
+        mode="scaleToFill"
+        style="transform: translate({{word.imgTx}}%, {{word.imgTy}}%)"
+        binderror="onImgError"
+      />
+    </view>
+    <text class="word-en">{{word.word}}</text>
+    <text class="word-phonetic">{{word.phonetic}}</text>
+    <view class="speaker" bindtap="playWord">🔊 点我听发音</view>
+    <view class="meaning-box">
+      <text class="word-meaning">{{word.meaning}}</text>
+      <view class="phrase-row" wx:if="{{word.phrase}}" bindtap="playPhrase">
+        <view class="phrase-text">
+          <text class="word-phrase">{{word.phrase}}</text>
+          <text class="word-phrase-cn">{{word.phraseMeaning}}</text>
+        </view>
+        <text class="phrase-speaker">🔊</text>
+      </view>
+    </view>
+    <view class="btn-primary next-step-btn" bindtap="onStep1Done"><text>听好了，下一步 →</text></view>
+  </view>
+
+  <!-- Step 2 · 读一读 -->
+  <view class="card main-card" wx:if="{{step === 2}}">
+    <text class="step-title">🎤 大声跟读</text>
+    <text class="word-en">{{word.word}}</text>
+    <view class="speaker small" bindtap="playWord">🔊 再听一遍</view>
+    <view
+      class="mic {{recording ? 'recording' : ''}}"
+      bindtouchstart="onStartRecord"
+      bindtouchend="onStopRecord"
+    >
+      <text class="mic-icon">{{recording ? '🔴' : '🎙️'}}</text>
+      <text class="mic-text">{{recording ? '正在录音…松开结束' : '按住说话'}}</text>
+    </view>
+    <view class="score-card score-{{autoLevel}}" wx:if="{{recorded && autoScore > 0}}">
+      <text class="score-stars">{{autoStars}}</text>
+      <view class="score-info">
+        <text class="score-num">{{autoScore}}分</text>
+        <text class="score-msg">{{autoMsg}}</text>
+      </view>
+    </view>
+    <view class="btn-ghost" wx:if="{{recorded}}" bindtap="onPlayBack">
+      <text>{{playingBack ? '🔈 播放中…' : '▶ 听听自己的声音'}}</text>
+    </view>
+    <text class="speak-hint">听完示例 → 按住麦克风跟读 → 播放对比</text>
+    <view class="row-btns">
+      <view class="btn-ghost" bindtap="onSpeakSkip"><text>再练练，先跳过</text></view>
+      <view class="btn-primary" bindtap="onSpeakGood"><text>我读对了 😄</text></view>
+    </view>
+  </view>
+
+  <!-- Step 3 · 小测验 -->
+  <view class="card main-card" wx:if="{{step === 3 && quiz}}">
+    <text class="step-title">{{quiz.type === 'listen-pick' ? '👂 听音选词' : '🔤 选出意思'}}</text>
+
+    <block wx:if="{{quiz.type === 'listen-pick'}}">
+      <view class="speaker" bindtap="playWord">🔊 播放发音</view>
+      <view class="options">
+        <view
+          class="option {{pickedIdx === index ? (quizCorrect ? 'right' : 'wrong') : ''}}"
+          wx:for="{{quiz.options}}"
+          wx:key="id"
+          data-idx="{{index}}"
+          bindtap="onPickOption"
+        >
+          <text class="option-word">{{item.word}}</text>
+          <text class="option-meaning">{{item.meaning}}</text>
+        </view>
+      </view>
+    </block>
+
+    <block wx:else>
+      <view class="quiz-word-box">
+        <text class="quiz-word">{{word.word}}</text>
+        <text class="quiz-phonetic">{{word.phonetic}}</text>
+      </view>
+      <view class="options">
+        <view
+          class="option {{pickedIdx === index ? (quizCorrect ? 'right' : 'wrong') : ''}}"
+          wx:for="{{quiz.options}}"
+          wx:key="id"
+          data-idx="{{index}}"
+          bindtap="onPickOption"
+        >
+          <text class="option-meaning">{{item.meaning}}</text>
+        </view>
+      </view>
+    </block>
+
+    <view class="quiz-feedback" wx:if="{{quizAnswered}}">
+      <text class="feedback-text {{quizCorrect ? 'good' : 'bad'}}">
+        {{quizCorrect ? '答对啦！⭐' : '正确答案：' + quiz.options[quiz.answerIdx].meaning}}
+      </text>
+      <view class="btn-primary" bindtap="onNextWord"><text>下一个 →</text></view>
+    </view>
+  </view>
+</block>
+
+<!-- ============ 奖励动画片 ============ -->
+<view class="celebrate" wx:if="{{phase === 'celebrate'}}">
+  <view class="skip-btn" wx:if="{{rewardStage < 3}}" bindtap="onSkipReward"><text>跳过 ▸</text></view>
+
+  <!-- 舞台：彩带 + 角色 -->
+  <view class="stage">
+    <text
+      class="confetti-item"
+      wx:for="{{confetti}}"
+      wx:key="id"
+      style="left:{{item.left}}%;animation-delay:{{item.delay}}s;animation-duration:{{item.dur}}s;font-size:{{item.size}}rpx"
+    >{{item.icon}}</text>
+
+    <view class="mascot-wrap">
+      <text class="mascot {{rewardStage >= 1 ? 'pop' : ''}} {{rewardStage >= 2 ? 'dance' : ''}}">⭐</text>
+      <text class="mascot-friend f1 {{rewardStage >= 2 ? 'pop' : ''}}">🐻</text>
+      <text class="mascot-friend f2 {{rewardStage >= 2 ? 'pop' : ''}}">🐰</text>
+      <text class="mascot-friend f3 {{rewardStage >= 2 ? 'pop' : ''}}">🐼</text>
+    </view>
+
+    <view class="bubble {{rewardStage >= 2 ? 'show' : ''}}">
+      <text>今天 5 个单词全学会啦！</text>
+    </view>
+  </view>
+
+  <!-- 第三幕：单词巡游 -->
+  <view class="parade" wx:if="{{rewardStage >= 3}}">
+    <text class="parade-title">🎬 今天学会的单词</text>
+    <view
+      class="parade-item"
+      wx:for="{{rewardWords}}"
+      wx:key="id"
+      style="animation-delay:{{index * 0.18}}s"
+    >
+      <view class="parade-img sprite">
+        <image
+          class="sprite-img"
+          src="../../assets/sprite.jpg"
+          mode="scaleToFill"
+          style="transform: translate({{item.imgTx}}%, {{item.imgTy}}%)"
+        />
+      </view>
+      <view class="parade-text">
+        <text class="parade-word">{{item.word}}</text>
+        <text class="parade-meaning">{{item.meaning}}</text>
+      </view>
+      <text class="parade-star">⭐</text>
+    </view>
+  </view>
+
+  <block wx:if="{{rewardStage >= 3}}">
+    <text class="celebrate-title">太棒了！今天的单词全部学会！</text>
+    <text class="celebrate-sub">明天会解锁新的 5 个单词哦</text>
+
+    <view class="achv-list" wx:if="{{newAchievements.length > 0}}">
+      <text class="achv-head">获得新成就</text>
+      <view class="achv-item" wx:for="{{newAchievements}}" wx:key="id">
+        <text class="achv-icon">{{item.icon}}</text>
+        <view class="achv-info">
+          <text class="achv-name">{{item.name}}</text>
+          <text class="achv-desc">{{item.description}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="btn-primary back-btn" bindtap="onBackHome"><text>回首页</text></view>
+  </block>
+</view>

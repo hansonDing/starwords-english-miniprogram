@@ -1,0 +1,73 @@
+<view class="page">
+  <!-- 顶部 Hero -->
+  <view class="hero">
+    <view class="hero-stars">✦ ⭐ ✦</view>
+    <text class="hero-title">StarWords</text>
+    <text class="hero-sub">星星英语 · 每天 5 个单词</text>
+  </view>
+
+  <!-- 连续学习 -->
+  <view class="card streak-card">
+    <text class="streak-flame">🔥</text>
+    <view class="streak-info">
+      <text class="streak-num">{{streakDays}} 天</text>
+      <text class="subtitle">{{streakText}}</text>
+    </view>
+    <view class="streak-badge">
+      <text class="streak-badge-num">{{learnedTotal}}</text>
+      <text class="streak-badge-label">已学单词</text>
+    </view>
+  </view>
+
+  <!-- 今日词卡（dayNo = 第几个学习日，每天 5 个新词） -->
+  <view class="card week-card">
+    <view class="week-head">
+      <text class="title">第 {{dayNo}} 天</text>
+      <text class="week-progress">{{progressPercent}}%</text>
+    </view>
+    <view class="week-bar">
+      <view class="week-bar-fill" style="width: {{progressPercent}}%"></view>
+    </view>
+    <view class="word-grid">
+      <view
+        class="word-chip {{item.learned ? 'learned' : ''}}"
+        wx:for="{{weekWords}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onPreviewWord"
+      >
+        <view class="word-img sprite">
+          <image
+            class="sprite-img"
+            src="../../assets/sprite.jpg"
+            mode="scaleToFill"
+            style="transform: translate({{item.imgTx}}%, {{item.imgTy}}%)"
+            binderror="onImgError"
+          />
+        </view>
+        <text class="word-text">{{item.word}}</text>
+        <text class="word-star">{{item.learned ? '⭐' : ''}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 每日动画入口 -->
+  <view class="card daily-card" bindtap="onGoDailyVideo">
+    <view class="daily-left">
+      <text class="daily-label">🎬 今天的动画</text>
+      <text class="daily-title">{{dailyTitle}}</text>
+      <text class="daily-en">{{dailyEnTitle}}</text>
+    </view>
+    <view class="daily-play"><text>▶</text></view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="actions">
+    <view class="btn-primary {{canLearn ? '' : 'disabled'}}" bindtap="onStartLearn">
+      <text>{{canLearn ? '▶ 开始今天的学习' : '今天已完成 ✓'}}</text>
+    </view>
+    <view class="btn-ghost" bindtap="onGoReview">
+      <text>复习{{dueCount > 0 ? '（' + dueCount + ' 个待复习）' : ''}}</text>
+    </view>
+  </view>
+</view>

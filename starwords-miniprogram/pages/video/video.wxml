@@ -1,0 +1,72 @@
+<view class="page">
+  <!-- 顶部 -->
+  <view class="hero">
+    <view class="hero-stars">🎬 ✦ 🎬</view>
+    <text class="hero-title">每日动画</text>
+    <text class="hero-sub">每天一段英文儿歌动画，看动画磨耳朵</text>
+  </view>
+
+  <!-- 今日动画 -->
+  <view class="card player-card" wx:if="{{current}}">
+    <view class="player-head">
+      <text class="today-badge">{{current.isToday ? '今天' : current.dayName}}</text>
+      <text class="cat-badge">{{current.category}}</text>
+    </view>
+    <text class="show-title">{{current.title}}</text>
+    <text class="show-en">{{current.enTitle}}</text>
+
+    <view class="video-box">
+      <video
+        wx:if="{{videoUrl}}"
+        class="video"
+        src="{{videoUrl}}"
+        controls
+        show-center-play-btn
+        object-fit="contain"
+        binderror="onVideoError"
+      ></video>
+      <view class="video-placeholder" wx:else>
+        <text class="ph-icon">{{current.uploaded ? '🎬' : '📼'}}</text>
+        <text class="ph-text">{{placeholderText}}</text>
+      </view>
+    </view>
+
+    <text class="video-error" wx:if="{{videoError}}">{{videoError}}</text>
+    <text class="show-desc">{{current.desc}}</text>
+  </view>
+
+  <!-- 本周日程 -->
+  <view class="card">
+    <text class="card-title">本周日程</text>
+    <text class="card-note">每天解锁一段，之前看过的可以回看</text>
+    <view class="day-grid">
+      <view
+        class="day-cell {{item.isToday ? 'today' : ''}} {{item.unlocked ? '' : 'locked'}} {{item.dayIndex === current.dayIndex ? 'active' : ''}}"
+        wx:for="{{week}}"
+        wx:key="dayIndex"
+        data-day="{{item.dayIndex}}"
+        bindtap="onPickDay"
+      >
+        <text class="day-name">{{item.dayName}}</text>
+        <text class="day-icon">{{item.unlocked ? (item.uploaded ? '▶' : '＋') : '🔒'}}</text>
+        <text class="day-title">{{item.unlocked ? item.title : '未解锁'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 家长入口 -->
+  <view class="card">
+    <text class="card-title">家长上传</text>
+    <block wx:if="{{canManage}}">
+      <text class="card-note">把动画视频传到云存储，孩子每天自动解锁一段。管理入口只对家长账号开放。</text>
+      <view class="btn-ghost" bindtap="onGoManage"><text>去管理动画（上传 / 替换 / 删除）</text></view>
+    </block>
+    <block wx:elif="{{loggedIn}}">
+      <text class="card-note">动画由家长账号上传和管理，你在这里安心观看就好。</text>
+    </block>
+    <block wx:else>
+      <text class="card-note">登录后才能看每日动画。</text>
+      <view class="btn-primary" bindtap="onGoLogin"><text>去登录</text></view>
+    </block>
+  </view>
+</view>

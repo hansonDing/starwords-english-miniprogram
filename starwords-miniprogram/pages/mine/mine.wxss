@@ -1,0 +1,159 @@
+.page {
+  padding: 24rpx 32rpx 48rpx;
+}
+
+.account-card {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.avatar {
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 50%;
+  background: #ede9fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56rpx;
+  margin-right: 24rpx;
+}
+
+.account-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.account-title {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #1f2937;
+}
+
+.nickname-input {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #1f2937;
+  border-bottom: 3rpx solid #ede9fe;
+  padding-bottom: 8rpx;
+}
+
+.user-id {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+.sync-btn {
+  margin-top: 24rpx;
+}
+
+.sync-text {
+  display: block;
+  text-align: center;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #22c55e;
+}
+
+.board-card {
+  margin-top: 32rpx;
+}
+
+.board-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.my-rank {
+  font-size: 24rpx;
+  color: #6d59eb;
+  font-weight: 700;
+}
+
+.board-empty {
+  padding: 32rpx 0;
+  display: flex;
+  justify-content: center;
+}
+
+.board-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.board-item {
+  display: flex;
+  align-items: center;
+  background: #f9fafb;
+  border-radius: 20rpx;
+  padding: 16rpx 20rpx;
+}
+
+.board-item.me {
+  background: #ede9fe;
+}
+
+.rank {
+  width: 64rpx;
+  text-align: center;
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #6b7280;
+}
+
+.board-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.board-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.board-sub {
+  font-size: 22rpx;
+  color: #9ca3af;
+}
+
+.board-count {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #6d59eb;
+}
+
+.logout {
+  display: flex;
+  justify-content: center;
+  margin-top: 40rpx;
+  color: #9ca3af;
+  font-size: 26rpx;
+}
+
+.cloud-warn {
+  background: #fff8e6;
+  border: 1rpx solid #f5dfa4;
+}
+
+.cloud-warn-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #b7791f;
+}
+
+.cloud-warn-text {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #a16207;
+  word-break: break-all;
+}

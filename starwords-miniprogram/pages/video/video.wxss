@@ -1,0 +1,207 @@
+.page {
+  padding: 24rpx 24rpx 48rpx;
+}
+
+/* 顶部 */
+.hero {
+  padding: 16rpx 8rpx 28rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero-stars {
+  font-size: 28rpx;
+  letter-spacing: 8rpx;
+  color: #9b8af4;
+  margin-bottom: 8rpx;
+}
+
+.hero-title {
+  font-size: 46rpx;
+  font-weight: 800;
+  color: #6d59eb;
+  letter-spacing: 2rpx;
+}
+
+.hero-sub {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  color: #6b7280;
+}
+
+/* 播放卡片 */
+.player-card {
+  margin-bottom: 24rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.player-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.today-badge {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #6d59eb, #9b8af4);
+  border-radius: 24rpx;
+  padding: 6rpx 20rpx;
+}
+
+.cat-badge {
+  font-size: 22rpx;
+  color: #6d59eb;
+  background: #ece9fe;
+  border-radius: 20rpx;
+  padding: 6rpx 18rpx;
+}
+
+.show-title {
+  font-size: 38rpx;
+  font-weight: 800;
+  color: #1f2937;
+}
+
+.show-en {
+  margin-top: 4rpx;
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+.video-box {
+  width: 100%;
+  height: 380rpx;
+  margin: 20rpx 0 12rpx;
+  border-radius: 24rpx;
+  overflow: hidden;
+  background: #1f2937;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+}
+
+.video-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f3f1fd;
+}
+
+.ph-icon {
+  font-size: 64rpx;
+  margin-bottom: 12rpx;
+}
+
+.ph-text {
+  font-size: 26rpx;
+  color: #6b7280;
+}
+
+.video-error {
+  width: 100%;
+  font-size: 24rpx;
+  color: #ef4444;
+  margin-bottom: 8rpx;
+}
+
+.show-desc {
+  font-size: 26rpx;
+  color: #6b7280;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* 通用卡片标题 */
+.card-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.card-note {
+  display: block;
+  margin: 8rpx 0 20rpx;
+  font-size: 24rpx;
+  color: #9ca3af;
+  line-height: 1.6;
+}
+
+/* 7 天日程 */
+.day-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.day-cell {
+  width: 130rpx;
+  margin-bottom: 16rpx;
+  padding: 16rpx 0;
+  border-radius: 20rpx;
+  background: #f6f5ff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 3rpx solid transparent;
+}
+
+.day-cell.today {
+  background: #ece9fe;
+}
+
+.day-cell.active {
+  border-color: #6d59eb;
+}
+
+.day-cell.locked {
+  opacity: 0.55;
+  background: #f3f4f6;
+}
+
+.day-name {
+  font-size: 22rpx;
+  color: #6b7280;
+}
+
+.day-icon {
+  font-size: 30rpx;
+  margin: 6rpx 0;
+  color: #6d59eb;
+}
+
+.day-cell.locked .day-icon {
+  color: #9ca3af;
+}
+
+.day-title {
+  font-size: 20rpx;
+  color: #1f2937;
+  max-width: 116rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 家长入口按钮：卡片是 flex 居中，必须显式撑满并留左右内边距，
+   否则文字会贴到圆角边上 */
+.player-card .btn-primary,
+.player-card .btn-ghost,
+.card .btn-primary,
+.card .btn-ghost {
+  width: 100%;
+  box-sizing: border-box;
+  padding-left: 40rpx;
+  padding-right: 40rpx;
+}

@@ -1,0 +1,46 @@
+<view class="page">
+  <!-- 总览 -->
+  <view class="stats-grid">
+    <view class="card stat">
+      <text class="stat-num">{{currentWeek}}</text>
+      <text class="stat-label">当前第几天 / 共 {{maxWeek}} 天</text>
+    </view>
+    <view class="card stat">
+      <text class="stat-num">{{learnedCount}}</text>
+      <text class="stat-label">已学单词 / {{totalWords}}</text>
+    </view>
+    <view class="card stat">
+      <text class="stat-num">{{streakDays}}</text>
+      <text class="stat-label">连续学习天数</text>
+    </view>
+    <view class="card stat">
+      <text class="stat-num">{{graduatedCount}}</text>
+      <text class="stat-label">复习毕业单词</text>
+    </view>
+  </view>
+
+  <!-- 学习旅程 -->
+  <view class="card journey">
+    <text class="title">学习旅程</text>
+    <view class="journey-bar">
+      <view class="journey-fill" style="width: {{journeyPercent}}%"></view>
+    </view>
+    <text class="subtitle">已完成 {{journeyPercent}}%，每天 5 个新单词，共 40 天</text>
+  </view>
+
+  <!-- 成就墙 -->
+  <view class="card achv-card">
+    <text class="title">成就墙</text>
+    <view class="achv-grid">
+      <view class="achv {{item.unlocked ? 'unlocked' : ''}}" wx:for="{{achievementsView}}" wx:key="id">
+        <text class="achv-icon">{{item.icon}}</text>
+        <text class="achv-name">{{item.name}}</text>
+        <text class="achv-desc">{{item.description}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="danger-zone">
+    <view class="reset-btn" bindtap="onReset"><text>重置学习进度</text></view>
+  </view>
+</view>

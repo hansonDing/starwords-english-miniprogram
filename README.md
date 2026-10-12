@@ -1,0 +1,69 @@
+# StarWords 星星英语 · 微信小程序
+
+给孩子的英语启蒙小程序：**每天 5 个单词** —— 看图 → 听音 → 跟读打分 → 小测验 → 奖励动画。走完 200 词（40 天）。
+
+纯微信小程序原生开发（CommonJS + WXML/WXSS），**不经任何打包器**：没有 `miniprogram_npm`，小程序目录里也没有 `package.json` / `node_modules`。
+
+## 目录结构
+
+```
+starwords-miniprogram/            小程序本体
+├── app.js / app.json / app.wxss
+├── pages/                        7 个页面
+│   ├── index/     首页（第 N 天、今天的动画）
+│   ├── learn/     学习三步：听一听 → 跟读 → 小测验
+│   ├── review/    复习
+│   ├── progress/  进度 + 星星图
+│   ├── mine/      我的（昵称、排行榜）
+│   ├── video/     每日动画（7 天日程）
+│   └── admin/     家长后台（上传动画、绑定家长账号）
+├── utils/                        业务逻辑
+│   ├── store.js          进度存取（本地 + 云端同步）
+│   ├── cloud.js          云服务封装
+│   ├── config.js         云服务公开配置
+│   ├── words.js          词库（由脚本生成）
+│   ├── audio.js          音频播放（真机 / 模拟器路径降级）
+│   ├── record-score.js   跟读评分（WAV 本地解析）
+│   ├── leaderboard.js    排行榜
+│   ├── dailyVideo.js     每日动画（签名地址 / 上传 / 清单）
+│   ├── admin.js          家长账号绑定
+│   ├── share.js          转发 / 分享到朋友圈
+│   └── wx-compat.js      预览模拟器缺失 API 兜底
+├── lib/workbuddy-cloud-sdk.js    云服务 SDK（已本地打补丁，见下）
+└── assets/                       200 词读音、200 条例句音频、单词精灵图、tab 图标
+
+starwords-miniprogram-scripts/    资源管线 + 自检脚本（**与小程序目录平级，不进小程序包**）
+```
+
+## ⚠️ 资源管线依赖网页版词库
+
+本小程序的词库源在网页版仓库 `hansonDing/starwords-english-learning` 的 `src/data/wordData.ts`：
+
+```
+wordData.ts ──extract-words.mjs──► words.json ──gen-words-js.mjs──► utils/words.js
+```
+
+只拿这个小程序仓库**可以直接运行**（音频、图片、词库都已提交），但**改单词 / 例句要回网页版仓库一起改**，再跑一遍上面的管线并重生成对应音频。
+
+## 交付前自检
+
+```bash
+cd starwords-miniprogram-scripts
+node check-static.cjs      # 模块引用、页面四件套、体积、文件数、隐私清单、分享能力……
+node preview-compile.cjs   # 本地复现平台预览编译
+```
+
+## 关键约束（改代码前必读）
+
+1. **不做小程序 npm 构建**：不要 `miniprogram_npm`、不要裸包名 `require`；小程序目录内不能出现 `node_modules` / `package.json`。
+2. 页面必须 **`pages/<n>/{js,json,wxml,wxss}` 四件套齐** —— 缺 `.json` 真机四个 tab 页会一起白屏。
+3. `<image>` 用相对路径 `../../assets/...`；`InnerAudioContext` **真机不支持 `../`**，必须用 `/assets/...`。
+4. 禁 `?.`、省略绑定的 `catch {}`、裸 `globalThis`（老 iOS 引擎解析报错 → 白屏）。
+5. **包体积**：< 2,000,000B（十进制）且 < 2,097,152B（2MiB）。
+6. **文件数 < 500**（预览编译器的硬上限；超了预览首页打不开，而且**没有任何报错**）。
+7. 不用分包（`subPackages[].pages` 为空即非法配置）。
+8. `lib/workbuddy-cloud-sdk.js` 打过一次**本地补丁**（放开非字符串 body，否则视频传不上去）。升级 / 重新生成 SDK 后必须重跑 `node starwords-miniprogram-scripts/patch-sdk-body.cjs`；`check-static.cjs` 会拦住漏打。
+
+## 云服务
+
+云配置在 `utils/config.js`，其中 `publishableKey` 是**可随前端分发的公开值**（类似 Supabase 的 anon key），私密凭据全部保存在服务端。

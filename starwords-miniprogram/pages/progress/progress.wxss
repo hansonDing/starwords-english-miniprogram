@@ -1,0 +1,111 @@
+.page {
+  padding: 24rpx 32rpx 48rpx;
+}
+
+.stats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-bottom: 24rpx;
+}
+
+.stat {
+  width: calc((100% - 20rpx) / 2 - 2rpx);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32rpx 16rpx;
+}
+
+.stat-num {
+  font-size: 56rpx;
+  font-weight: 900;
+  color: #6d59eb;
+}
+
+.stat-label {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #6b7280;
+}
+
+.journey {
+  margin-bottom: 24rpx;
+}
+
+.journey-bar {
+  height: 20rpx;
+  background: #ede9fe;
+  border-radius: 10rpx;
+  overflow: hidden;
+  margin: 20rpx 0 12rpx;
+}
+
+.journey-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6d59eb, #fbbf24);
+  border-radius: 10rpx;
+}
+
+.achv-card {
+  margin-bottom: 32rpx;
+}
+
+.achv-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.achv {
+  width: calc((100% - 40rpx) / 3 - 2rpx);
+  box-sizing: border-box;
+  background: #f9fafb;
+  border-radius: 24rpx;
+  padding: 20rpx 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
+.achv.unlocked {
+  background: #fffbeb;
+  filter: none;
+  opacity: 1;
+}
+
+.achv-icon {
+  font-size: 44rpx;
+}
+
+.achv-name {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  font-weight: 800;
+  color: #374151;
+}
+
+.achv-desc {
+  margin-top: 4rpx;
+  font-size: 18rpx;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.danger-zone {
+  display: flex;
+  justify-content: center;
+}
+
+.reset-btn {
+  color: #ef4444;
+  font-size: 28rpx;
+  padding: 16rpx 48rpx;
+  border: 3rpx solid #fecaca;
+  border-radius: 44rpx;
+  background: #fef2f2;
+}

@@ -1,0 +1,141 @@
+<view class="page">
+  <!-- 模式切换 -->
+  <view class="tabs">
+    <view class="tab {{mode === 'quick' ? 'active' : ''}}" data-mode="quick" bindtap="onModeChange">到期复习</view>
+    <view class="tab {{mode === 'spelling' ? 'active' : ''}}" data-mode="spelling" bindtap="onModeChange">拼写挑战</view>
+    <view class="tab {{mode === 'records' ? 'active' : ''}}" data-mode="records" bindtap="onModeChange">学习记录</view>
+  </view>
+
+  <!-- ===== 到期复习 ===== -->
+  <block wx:if="{{mode === 'quick'}}">
+    <view class="card empty" wx:if="{{dueWords.length === 0}}">
+      <text class="empty-icon">🌱</text>
+      <text class="empty-text">今天没有待复习的单词</text>
+      <text class="empty-sub">学完新词后，第二天会安排复习哦</text>
+    </view>
+
+    <block wx:if="{{dueWords.length > 0 && !reviewDone && quiz}}">
+      <view class="progress-line">
+        <text>{{quizIndex + 1}} / {{dueWords.length}}</text>
+      </view>
+      <view class="card main-card">
+        <text class="step-title">{{quiz.type === 'listen-pick' ? '👂 听音选词' : '🔤 选出意思'}}</text>
+        <view class="speaker" wx:if="{{quiz.type === 'listen-pick'}}" bindtap="onPlayQuizAudio">🔊 播放发音</view>
+        <view class="quiz-word-box" wx:else>
+          <text class="quiz-word">{{currentWord.word}}</text>
+          <text class="quiz-phonetic">{{currentWord.phonetic}}</text>
+        </view>
+        <view class="options">
+          <view
+            class="option {{pickedIdx === index ? (quizCorrect ? 'right' : 'wrong') : ''}}"
+            wx:for="{{quiz.options}}"
+            wx:key="id"
+            data-idx="{{index}}"
+            bindtap="onPickOption"
+          >
+            <text class="option-word" wx:if="{{quiz.type === 'listen-pick'}}">{{item.word}}</text>
+            <text class="option-meaning">{{item.meaning}}</text>
+          </view>
+        </view>
+        <view class="quiz-feedback" wx:if="{{quizAnswered}}">
+          <text class="feedback-text {{quizCorrect ? 'good' : 'bad'}}">
+            {{quizCorrect ? '记住了！⭐' : '再想想：' + quiz.options[quiz.answerIdx].word + ' ' + quiz.options[quiz.answerIdx].meaning}}
+          </text>
+          <view class="btn-primary" bindtap="onNextReview"><text>下一个 →</text></view>
+        </view>
+      </view>
+    </block>
+
+    <view class="card empty" wx:if="{{reviewDone}}">
+      <text class="empty-icon">🎉</text>
+      <text class="empty-text">复习完成！答对 {{reviewedCount}}/{{totalReviewed}}</text>
+      <text class="empty-sub">答对的单词会安排更远期的复习</text>
+    </view>
+  </block>
+
+  <!-- ===== 拼写挑战 ===== -->
+  <block wx:if="{{mode === 'spelling'}}">
+    <view class="card empty" wx:if="{{spellDone && spellWords.length === 0}}">
+      <text class="empty-icon">📚</text>
+      <text class="empty-text">先去学习页学几个单词吧</text>
+    </view>
+    <view class="card empty" wx:if="{{spellDone && spellWords.length > 0}}">
+      <text class="empty-icon">🎉</text>
+      <text class="empty-text">拼写挑战完成！</text>
+    </view>
+
+    <block wx:if="{{!spellDone && spell}}">
+      <view class="progress-line">
+        <text>{{spellIndex + 1}} / {{spellWords.length}}</text>
+      </view>
+      <view class="card main-card">
+        <text class="step-title">✍️ 拼出这个单词</text>
+        <view class="spell-img sprite">
+          <image
+            class="sprite-img"
+            src="../../assets/sprite.jpg"
+            mode="scaleToFill"
+            style="transform: translate({{spell.word.imgTx}}%, {{spell.word.imgTy}}%)"
+            binderror="onSpellImgError"
+          />
+        </view>
+        <view class="speaker small" bindtap="onPlaySpellAudio">🔊 听发音</view>
+        <text class="spell-meaning">{{spell.word.meaning}}</text>
+
+        <view class="slots">
+          <view class="slot {{index < spell.filled.length ? 'filled' : ''}}" wx:for="{{spell.target}}" wx:key="index">
+            <text wx:if="{{index < spell.filled.length}}">{{spell.filled[index].char}}</text>
+          </view>
+        </view>
+        <view class="btn-ghost undo" bindtap="onUndoTap"><text>⌫ 删掉一个</text></view>
+
+        <view class="tiles">
+          <view
+            class="tile {{item.used ? 'used' : ''}}"
+            wx:for="{{spell.tiles}}"
+            wx:key="idx"
+            data-idx="{{index}}"
+            bindtap="onTileTap"
+          >
+            <text>{{item.char}}</text>
+          </view>
+        </view>
+
+        <view class="quiz-feedback" wx:if="{{spellFeedback}}">
+          <text class="feedback-text {{spellCorrect ? 'good' : 'bad'}}">{{spellFeedback}}</text>
+          <view class="btn-primary" bindtap="onNextSpell"><text>下一个 →</text></view>
+        </view>
+      </view>
+    </block>
+  </block>
+
+  <!-- ===== 学习记录 ===== -->
+  <block wx:if="{{mode === 'records'}}">
+    <view class="card empty" wx:if="{{records.length === 0}}">
+      <text class="empty-icon">⭐</text>
+      <text class="empty-text">还没有学习记录</text>
+    </view>
+    <view class="records" wx:else>
+      <view class="card record-item" wx:for="{{records}}" wx:key="id">
+        <view class="record-img sprite">
+          <image
+            class="sprite-img"
+            src="../../assets/sprite.jpg"
+            mode="scaleToFill"
+            style="transform: translate({{item.imgTx}}%, {{item.imgTy}}%)"
+            data-idx="{{index}}"
+            binderror="onRecordImgError"
+          />
+        </view>
+        <view class="record-info">
+          <text class="record-word">{{item.word}}</text>
+          <text class="record-meaning">{{item.meaning}}</text>
+        </view>
+        <view class="record-right">
+          <text class="record-score">{{item.score}}分</text>
+          <text class="record-date">{{item.date}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

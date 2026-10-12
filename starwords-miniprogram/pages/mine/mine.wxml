@@ -1,0 +1,53 @@
+<view class="page">
+  <!-- 账号卡片 -->
+  <view class="card account-card">
+    <view class="avatar">{{loggedIn ? '👧' : '👶'}}</view>
+    <view class="account-info">
+      <block wx:if="{{loggedIn}}">
+        <input class="nickname-input" value="{{nickname}}" maxlength="12" bindblur="onNicknameInput" placeholder="给孩子起个昵称" />
+        <text class="user-id">已通过微信登录</text>
+      </block>
+      <block wx:else>
+        <text class="account-title">游客模式</text>
+        <text class="user-id">登录后可云同步学习进度并参与排行榜</text>
+      </block>
+    </view>
+  </view>
+
+  <!-- 云服务不可用提示（本地学习不受影响） -->
+  <view class="card cloud-warn" wx:if="{{!cloudAvailable}}">
+    <text class="cloud-warn-title">云服务暂不可用</text>
+    <text class="cloud-warn-text">学习进度已保存在本机，不影响孩子正常学习。{{cloudError}}</text>
+  </view>
+
+  <view class="btn-primary" wx:if="{{!loggedIn}}" bindtap="onLogin"><text>微信一键登录</text></view>
+  <view class="btn-ghost sync-btn" wx:if="{{loggedIn}}" bindtap="onManualSync">
+    <text>{{syncing ? '同步中…' : '↻ 手动同步进度'}}</text>
+  </view>
+  <text class="sync-text" wx:if="{{syncText}}">{{syncText}}</text>
+
+  <!-- 排行榜 -->
+  <view class="card board-card">
+    <view class="board-head">
+      <text class="title">学习排行榜</text>
+      <text class="my-rank" wx:if="{{myRank > 0}}">我的排名：第 {{myRank}} 名</text>
+    </view>
+
+    <view class="board-empty" wx:if="{{leaderboard.length === 0}}">
+      <text class="subtitle">还没有小伙伴上榜，快来做第一名！</text>
+    </view>
+
+    <view class="board-list" wx:else>
+      <view class="board-item {{item.isMe ? 'me' : ''}}" wx:for="{{leaderboard}}" wx:key="rank">
+        <text class="rank {{item.rank <= 3 ? 'top' : ''}}">{{item.rank <= 3 ? ['🥇','🥈','🥉'][item.rank-1] : item.rank}}</text>
+        <view class="board-info">
+          <text class="board-name">{{item.name}}{{item.isMe ? '（我）' : ''}}</text>
+          <text class="board-sub">第 {{item.week}} 天 · 连续 {{item.streak}} 天</text>
+        </view>
+        <text class="board-count">{{item.learned}} 词</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="logout" wx:if="{{loggedIn}}" bindtap="onLogout"><text>退出登录</text></view>
+</view>

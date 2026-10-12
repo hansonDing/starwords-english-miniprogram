@@ -1,0 +1,17 @@
+# 依赖与构建产物
+node_modules
+miniprogram_npm
+dist
+
+# 脚本中间产物 / 临时目录
+__pycache__
+*.pyc
+_tmp_phrase
+words.json.tmp
+
+# 编辑器 / 系统
+.DS_Store
+Thumbs.db
+.idea
+.vscode
+*.log
