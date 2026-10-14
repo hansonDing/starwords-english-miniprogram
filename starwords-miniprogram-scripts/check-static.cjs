@@ -358,6 +358,7 @@ if (privacyNeeds.length === 0) {
 /* ---------- 4f. 分享能力（转发给好友 / 分享到朋友圈）----------
    微信要求页面实现 onShareAppMessage / onShareTimeline 才会启用转发入口；
    本项目在 app.js 用 Page 包装器统一注入（实现放在 utils/share.js）。
+   静态只能确认「代码写对了」；运行时行为另跑 `node share-runtime-check.cjs` 验证。
    ⚠️ 账号侧还需【微信认证】+【ICP 备案】，否则微信会限制「被分享 / 被搜索」能力 ——
       这时按钮照样是灰的，代码改不了，只能去小程序后台处理。 */
 console.log('[4f] 分享能力');
