@@ -53,7 +53,8 @@
       <text class="mic-icon">{{recording ? '🔴' : '🎙️'}}</text>
       <text class="mic-text">{{recording ? '正在录音…松开结束' : '按住说话'}}</text>
     </view>
-    <view class="score-card score-{{autoLevel}}" wx:if="{{recorded && autoStarCount > 0}}">
+    <!-- 0 星（完全没听到声音）也要给反馈，所以判 autoLevel 而不是 autoStarCount > 0 -->
+    <view class="score-card score-{{autoLevel}}" wx:if="{{recorded && autoLevel}}">
       <view class="stars-row">
         <text class="star star-1 {{autoStarCount >= 1 ? 'on' : ''}}">★</text>
         <text class="star star-2 {{autoStarCount >= 2 ? 'on' : ''}}">★</text>

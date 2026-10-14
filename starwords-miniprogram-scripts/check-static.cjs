@@ -375,8 +375,9 @@ if (!fs.existsSync(sharePath)) {
 }
 
 /* ---------- 4g. 跟读星级（界面只给星星，不给分数）----------
-   跟读结果只有三档：>60 分 3 星、>40 分 2 星、其余 1 星（严格大于）。
-   分数被 clamp 在 45~96，所以「真开口读了」至少 2 星，1 星只留给"没读成"。
+   跟读结果四档：>60 分 3 星、>40 分 2 星、>30 分 1 星、其余 0 星（严格大于）。
+   30 分是"完全没听到声音"的专属分数 → 0 星。
+   分数被 clamp 在 45~96，所以「真开口读了」至少 2 星；1 星给"读太短没读完"，0 星给"没出声"。
    行为验证另跑 `node record-score-check.cjs`（合成波形，8 种情况 + 边界）。 */
 console.log('[4g] 跟读星级');
 const recPath = path.join(root, 'utils', 'record-score.js');
@@ -386,12 +387,18 @@ if (!fs.existsSync(recPath)) {
   const rec = fs.readFileSync(recPath, 'utf8');
   if (!/function starsFor\s*\(/.test(rec)) {
     fail('record-score.js 缺少 starsFor()：分数 → 星级换算');
-  } else if (!/>\s*60\s*\)\s*return 3/.test(rec) || !/>\s*40\s*\)\s*return 2/.test(rec)) {
-    fail('星级阈值被改动：约定为 >60 → 3 星、>40 → 2 星、其余 1 星');
+  } else if (
+    !/>\s*60\s*\)\s*return 3/.test(rec) ||
+    !/>\s*40\s*\)\s*return 2/.test(rec) ||
+    !/>\s*30\s*\)\s*return 1/.test(rec)
+  ) {
+    fail('星级阈值被改动：约定为 >60 → 3 星、>40 → 2 星、>30 → 1 星、其余 0 星');
   } else if (rec.indexOf('starCount') === -1) {
     fail('record-score.js 未返回 starCount（界面拿不到星级）');
+  } else if (!/starCount:\s*0/.test(rec) || !/level:\s*'none'/.test(rec)) {
+    fail('「完全没听到声音」未映射到 0 星（应返回 starCount: 0 / level: none）');
   } else {
-    pass('星级换算 3/2/1 = >60 / >40 / 其余（严格大于）');
+    pass('星级换算 3/2/1/0 = >60 / >40 / >30 / 其余（严格大于）');
   }
 
   const learnWxml = fs.readFileSync(path.join(root, 'pages', 'learn', 'learn.wxml'), 'utf8');
@@ -401,8 +408,11 @@ if (!fs.existsSync(recPath)) {
     fail('learn.wxml 仍在显示分数（约定只显示星星）');
   } else if (learnWxml.indexOf('autoStarCount') === -1) {
     fail('learn.wxml 未使用 autoStarCount');
+  } else if (!/recorded && autoLevel/.test(learnWxml)) {
+    // 0 星也要出反馈，所以判 autoLevel 而不是 autoStarCount > 0
+    fail('learn.wxml 的评分卡片条件不是 autoLevel：0 星时反馈会整块消失');
   } else {
-    pass('跟读反馈只显示 3 颗星 + 鼓励语');
+    pass('跟读反馈只显示 3 颗星 + 鼓励语（含 0 星）');
   }
 }
 

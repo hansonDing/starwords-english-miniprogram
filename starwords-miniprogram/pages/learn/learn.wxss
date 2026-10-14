@@ -225,6 +225,11 @@
   background: #fff7ed;
 }
 
+/* 0 星：完全没听到声音 —— 用中性的灰，不要像 1 星那样"橙色提醒" */
+.score-card.score-none {
+  background: #f3f4f6;
+}
+
 /* 三颗星：亮起来的是金色，没拿到的留浅灰（让小朋友看到"还差一颗"） */
 .stars-row {
   display: flex;

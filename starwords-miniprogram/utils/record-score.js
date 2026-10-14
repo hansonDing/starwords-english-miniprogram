@@ -6,12 +6,14 @@
 // 三者合成 0~100 的分数。这是"开口程度/节奏"评分，
 // 不是 AI 发音评测（那需要接入第三方语音评测服务）。
 //
-// 星级换算（2026-10-14 起，界面只显示星星，不显示分数）：
+// 星级换算（2026-10-15 起，界面只显示星星，不显示分数）：
 //   3 星（>60 分）：完整、清楚地把单词读出来了 —— 正常读完的都落在这档
 //   2 星（>40 分）：开口读了，但有明显问题（读得太长 / 节奏或音量差一截）
-//   1 星（≤40 分）：基本没完成跟读（没听到声音 / 读得太短没读完）
-// 注：正常评分路径的分数被 clamp 在 45~96，所以「真开口读了」至少 2 星，
-//     1 星只留给"没读成"。三档语义：没读成 / 读了但不够好 / 读对了。
+//   1 星（>30 分）：读了，但没读完（时长太短）
+//   0 星（≤30 分）：完全没听到声音
+// 注：正常评分路径的分数被 clamp 在 45~96，所以「真开口读了」至少 2 星；
+//     1 星只给"读太短没读完"，0 星只给"压根没出声"。四档语义：
+//     没出声 / 没读完 / 读了但不够好 / 读对了。
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
 }
@@ -78,27 +80,35 @@ function analyzePcm(u8, wav) {
   };
 }
 
-// 分数 → 星级（1~3）。>60 → 3 星；>40 → 2 星；其余 1 星。
+// 分数 → 星级（0~3）。>60 → 3 星；>40 → 2 星；>30 → 1 星；其余 0 星。
+// 30 分是"完全没听到声音"的专属分数，所以 <=30 就是 0 星。
 function starsFor(score) {
   if (score > 60) return 3;
   if (score > 40) return 2;
-  return 1;
+  if (score > 30) return 1;
+  return 0;
 }
 
 // 打分。返回 { score, level, starCount, message } 或 null（解析失败）
-// level：great（3 星）/ good（2 星）/ low（1 星），用于界面配色
+// level：great（3 星）/ good（2 星）/ low（1 星）/ none（0 星），用于界面配色
 function grade(u8) {
   var wav = parseWav(u8);
   if (!wav) return null;
   var m = analyzePcm(u8, wav);
   if (!m) return null;
 
+  // 完全没听到声音 = 0 星（唯一进 0 星的入口；分数 30 也是 starsFor 的 0 星分界）
   if (m.rms < 0.008 || m.voicedRatio < 0.04) {
-    return { score: 30, level: 'low', starCount: 1, message: '没听到声音，声音再大一点试试吧' };
+    return {
+      score: 30,
+      level: 'none',
+      starCount: 0,
+      message: '没有听到声音，按住麦克风大声读出来吧',
+    };
   }
   if (m.duration < 0.35) {
-    // 45 → 35：读太短 = 没读完，跟"没声音"同属 1 星（没读成）
-    return { score: 35, level: 'low', starCount: 1, message: '读得有点短，再大声读一遍吧' };
+    // 35 分：读太短 = 没读完，跟"没声音"分开 —— 出声了就该有 1 星
+    return { score: 35, level: 'low', starCount: 1, message: '读得有点短，再完整读一遍吧' };
   }
   if (m.duration > 3.2) {
     return { score: 55, level: 'good', starCount: 2, message: '有点长哦，只要读这个单词就可以啦' };

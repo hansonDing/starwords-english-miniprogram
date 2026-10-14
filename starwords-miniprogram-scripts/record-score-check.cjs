@@ -74,9 +74,10 @@ function check(cond, msg) {
 }
 
 // [描述, 时长s, 振幅, 静音, 期望星级]
+// 0 星 = 完全没听到声音（唯一的 0 星入口）；1 星 = 出声了但没读完
 const cases = [
-  ['完全没声音（0.8s 静音）', 0.8, 0, true, 1],
-  ['声音太轻（0.8s 极低振幅）', 0.8, 0.004, false, 1],
+  ['完全没声音（0.8s 静音）', 0.8, 0, true, 0],
+  ['声音太轻（0.8s 极低振幅）', 0.8, 0.004, false, 0],
   ['读得太短（0.2s）', 0.2, 0.5, false, 1],
   ['读得太长（3.5s 一直读）', 3.5, 0.5, false, 2],
   ['拖得很慢（2.4s）', 2.4, 0.5, false, 2],
@@ -98,13 +99,18 @@ for (const [label, seconds, amp, silent, want] of cases) {
   );
 }
 
-console.log('[2] 边界：>60 才给 3 星，>40 才给 2 星');
+console.log('[2] 边界：>60 才给 3 星，>40 才给 2 星，>30 才给 1 星');
 check(rs.starsFor(61) === 3 && rs.starsFor(60) === 2, '61 → 3 星；60 → 2 星（严格大于）');
 check(rs.starsFor(41) === 2 && rs.starsFor(40) === 1, '41 → 2 星；40 → 1 星（严格大于）');
-check(rs.starsFor(30) === 1 && rs.starsFor(96) === 3, '30 → 1 星；96 → 3 星');
+check(rs.starsFor(31) === 1 && rs.starsFor(30) === 0, '31 → 1 星；30 → 0 星（严格大于）');
+check(rs.starsFor(0) === 0 && rs.starsFor(96) === 3, '0 → 0 星；96 → 3 星');
 
-console.log('[3] 三档语义：真开口读了至少 2 星');
+console.log('[3] 四档语义：没出声 0 星 / 没读完 1 星 / 真开口读了至少 2 星');
 {
+  const none = rs.grade(makeWav(0.8, 0, true));
+  check(none.starCount === 0 && none.level === 'none', '静音录音 → 0 星、level=none（界面照常显示反馈）');
+  const short = rs.grade(makeWav(0.2, 0.5, false));
+  check(short.starCount === 1, '出声但太短 → 1 星（' + short.score + ' 分，不跟 0 星混档）');
   // 正常评分路径的分数下限被 clamp 在 45 → 任何"读到合理时长 + 有声音"的录音都不会掉到 1 星
   const low = rs.grade(makeWav(3.2, 0.5, false));
   check(low.starCount >= 2, '卡在评分路径下限的录音仍是 2 星（' + low.score + ' 分）');
