@@ -36,10 +36,9 @@ Page({
     playingBack: false,
     spokeWell: false,
     wordScore: 0,
-    // 自动评分（录音结束后本地分析得出）
-    autoScore: 0,
+    // 自动评分（录音结束后本地分析得出，界面只显示星星）
     autoLevel: '',
-    autoStars: '',
+    autoStarCount: 0,
     autoMsg: '',
     finishedCount: 0,
     weekWordsView: [],
@@ -139,14 +138,13 @@ Page({
     });
   },
 
-  // 录音结束后自动评分：本地分析时长/响度/有声占比
+  // 录音结束后自动评分：本地分析时长/响度/有声占比 → 换算成 1~3 颗星
   gradeRecording(path) {
     recordScore.gradeFile(path).then((r) => {
       if (!r) return; // 解析失败就不显示评分，不影响原有流程
       this.setData({
-        autoScore: r.score,
         autoLevel: r.level,
-        autoStars: r.stars,
+        autoStarCount: r.starCount,
         autoMsg: r.message,
       });
     });
@@ -154,12 +152,8 @@ Page({
 
   onStartRecord() {
     if (this.data.recording) return;
-    if (this.data.recorded) {
-      // 重录：先清掉旧录音状态
-      this.setData({ recorded: false, spokeWell: false, autoScore: 0, autoLevel: '', autoStars: '', autoMsg: '' });
-    } else {
-      this.setData({ autoScore: 0, autoLevel: '', autoStars: '', autoMsg: '' });
-    }
+    // 重录 / 新录：先清掉上一次的星级反馈，避免旧星星残留
+    this.setData({ recorded: false, spokeWell: false, autoLevel: '', autoStarCount: 0, autoMsg: '' });
     // 用 WAV 格式：包内可解析 PCM，供自动评分分析
     this.recorder.start({ duration: 6000, format: 'wav', sampleRate: 16000, numberOfChannels: 1 });
   },
@@ -282,9 +276,8 @@ Page({
       recorded: false,
       spokeWell: false,
       wordScore: 0,
-      autoScore: 0,
       autoLevel: '',
-      autoStars: '',
+      autoStarCount: 0,
       autoMsg: '',
       weekWordsView: view,
       finishedCount,

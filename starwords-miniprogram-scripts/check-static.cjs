@@ -374,6 +374,38 @@ if (!fs.existsSync(sharePath)) {
   pass('所有页面已注入转发 / 朋友圈分享能力（账号侧仍需认证 + 备案）');
 }
 
+/* ---------- 4g. 跟读星级（界面只给星星，不给分数）----------
+   跟读结果只有三档：>60 分 3 星、>40 分 2 星、其余 1 星（严格大于）。
+   分数被 clamp 在 45~96，所以「真开口读了」至少 2 星，1 星只留给"没读成"。
+   行为验证另跑 `node record-score-check.cjs`（合成波形，8 种情况 + 边界）。 */
+console.log('[4g] 跟读星级');
+const recPath = path.join(root, 'utils', 'record-score.js');
+if (!fs.existsSync(recPath)) {
+  fail('缺少 utils/record-score.js');
+} else {
+  const rec = fs.readFileSync(recPath, 'utf8');
+  if (!/function starsFor\s*\(/.test(rec)) {
+    fail('record-score.js 缺少 starsFor()：分数 → 星级换算');
+  } else if (!/>\s*60\s*\)\s*return 3/.test(rec) || !/>\s*40\s*\)\s*return 2/.test(rec)) {
+    fail('星级阈值被改动：约定为 >60 → 3 星、>40 → 2 星、其余 1 星');
+  } else if (rec.indexOf('starCount') === -1) {
+    fail('record-score.js 未返回 starCount（界面拿不到星级）');
+  } else {
+    pass('星级换算 3/2/1 = >60 / >40 / 其余（严格大于）');
+  }
+
+  const learnWxml = fs.readFileSync(path.join(root, 'pages', 'learn', 'learn.wxml'), 'utf8');
+  if (learnWxml.indexOf('stars-row') === -1) {
+    fail('learn.wxml 未渲染三颗星');
+  } else if (/\{\{\s*autoScore\s*\}\}/.test(learnWxml)) {
+    fail('learn.wxml 仍在显示分数（约定只显示星星）');
+  } else if (learnWxml.indexOf('autoStarCount') === -1) {
+    fail('learn.wxml 未使用 autoStarCount');
+  } else {
+    pass('跟读反馈只显示 3 颗星 + 鼓励语');
+  }
+}
+
 /* ---------- 5. wxml 事件处理函数都有定义 ---------- */
 console.log('[5] 事件处理函数');
 let missingHandler = 0;

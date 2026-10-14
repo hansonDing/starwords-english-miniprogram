@@ -53,12 +53,13 @@
       <text class="mic-icon">{{recording ? '🔴' : '🎙️'}}</text>
       <text class="mic-text">{{recording ? '正在录音…松开结束' : '按住说话'}}</text>
     </view>
-    <view class="score-card score-{{autoLevel}}" wx:if="{{recorded && autoScore > 0}}">
-      <text class="score-stars">{{autoStars}}</text>
-      <view class="score-info">
-        <text class="score-num">{{autoScore}}分</text>
-        <text class="score-msg">{{autoMsg}}</text>
+    <view class="score-card score-{{autoLevel}}" wx:if="{{recorded && autoStarCount > 0}}">
+      <view class="stars-row">
+        <text class="star star-1 {{autoStarCount >= 1 ? 'on' : ''}}">★</text>
+        <text class="star star-2 {{autoStarCount >= 2 ? 'on' : ''}}">★</text>
+        <text class="star star-3 {{autoStarCount >= 3 ? 'on' : ''}}">★</text>
       </view>
+      <text class="score-msg">{{autoMsg}}</text>
     </view>
     <view class="btn-ghost" wx:if="{{recorded}}" bindtap="onPlayBack">
       <text>{{playingBack ? '🔈 播放中…' : '▶ 听听自己的声音'}}</text>

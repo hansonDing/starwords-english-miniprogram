@@ -5,6 +5,13 @@
 //   3) 有声占比 voicedRatio —— 有 20ms 窗口响度超过阈值的比例
 // 三者合成 0~100 的分数。这是"开口程度/节奏"评分，
 // 不是 AI 发音评测（那需要接入第三方语音评测服务）。
+//
+// 星级换算（2026-10-14 起，界面只显示星星，不显示分数）：
+//   3 星（>60 分）：完整、清楚地把单词读出来了 —— 正常读完的都落在这档
+//   2 星（>40 分）：开口读了，但有明显问题（读得太长 / 节奏或音量差一截）
+//   1 星（≤40 分）：基本没完成跟读（没听到声音 / 读得太短没读完）
+// 注：正常评分路径的分数被 clamp 在 45~96，所以「真开口读了」至少 2 星，
+//     1 星只留给"没读成"。三档语义：没读成 / 读了但不够好 / 读对了。
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
 }
@@ -71,7 +78,15 @@ function analyzePcm(u8, wav) {
   };
 }
 
-// 打分。返回 { score, level, stars, message } 或 null（解析失败）
+// 分数 → 星级（1~3）。>60 → 3 星；>40 → 2 星；其余 1 星。
+function starsFor(score) {
+  if (score > 60) return 3;
+  if (score > 40) return 2;
+  return 1;
+}
+
+// 打分。返回 { score, level, starCount, message } 或 null（解析失败）
+// level：great（3 星）/ good（2 星）/ low（1 星），用于界面配色
 function grade(u8) {
   var wav = parseWav(u8);
   if (!wav) return null;
@@ -79,26 +94,29 @@ function grade(u8) {
   if (!m) return null;
 
   if (m.rms < 0.008 || m.voicedRatio < 0.04) {
-    return { score: 30, level: 'low', stars: '⭐', message: '没听到声音，声音再大一点试试吧' };
+    return { score: 30, level: 'low', starCount: 1, message: '没听到声音，声音再大一点试试吧' };
   }
   if (m.duration < 0.35) {
-    return { score: 45, level: 'low', stars: '⭐', message: '读得有点短，再大声读一遍吧' };
+    // 45 → 35：读太短 = 没读完，跟"没声音"同属 1 星（没读成）
+    return { score: 35, level: 'low', starCount: 1, message: '读得有点短，再大声读一遍吧' };
   }
   if (m.duration > 3.2) {
-    return { score: 55, level: 'mid', stars: '⭐⭐', message: '有点长哦，只要读这个单词就可以啦' };
+    return { score: 55, level: 'good', starCount: 2, message: '有点长哦，只要读这个单词就可以啦' };
   }
 
   var durScore = 90 - Math.abs(m.duration - 1.1) * 25; // 1.1s 附近最佳
   var clarity = 0.7 + 0.3 * Math.min(1, m.voicedRatio / 0.6);
   var score = clamp(Math.round(durScore * clarity), 45, 96);
+  var starCount = starsFor(score);
 
-  if (score >= 80) {
-    return { score: score, level: 'great', stars: '⭐⭐⭐', message: '读得很棒！继续加油 🎉' };
+  if (starCount === 3) {
+    return { score: score, level: 'great', starCount: 3, message: '读得真棒！继续加油 🎉' };
   }
-  if (score >= 60) {
-    return { score: score, level: 'good', stars: '⭐⭐', message: '读得不错，再试一次会更好' };
+  if (starCount === 2) {
+    return { score: score, level: 'good', starCount: 2, message: '读出来啦！再试一次会更棒' };
   }
-  return { score: score, level: 'low', stars: '⭐', message: '再大声、清楚地读一遍试试' };
+  // 防御分支：当前 clamp 下限 45 保证走不到这里，留作下限调整时的兜底
+  return { score: score, level: 'low', starCount: 1, message: '再大声、清楚地读一遍试试' };
 }
 
 // 读文件后评分；失败返回 null

@@ -200,14 +200,15 @@
   color: #6b7280;
 }
 
-/* 自动评分卡片 */
+/* 自动评分卡片：只显示 3 颗星 + 一句鼓励（分数对小朋友没意义） */
 .score-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16rpx;
+  gap: 10rpx;
   width: 100%;
   box-sizing: border-box;
-  padding: 20rpx 28rpx;
+  padding: 22rpx 28rpx;
   border-radius: 20rpx;
   background: #f5f3ff;
 }
@@ -216,33 +217,60 @@
   background: #ecfdf3;
 }
 
+.score-card.score-good {
+  background: #eff6ff;
+}
+
 .score-card.score-low {
   background: #fff7ed;
 }
 
-.score-stars {
-  font-size: 30rpx;
-}
-
-.score-info {
+/* 三颗星：亮起来的是金色，没拿到的留浅灰（让小朋友看到"还差一颗"） */
+.stars-row {
   display: flex;
   align-items: center;
-  gap: 14rpx;
-  flex: 1;
-  min-width: 0;
+  gap: 10rpx;
 }
 
-.score-num {
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #6d59eb;
+.star {
+  font-size: 56rpx;
+  line-height: 1;
+  color: #e5e7eb;
+}
+
+.star.on {
+  color: #ffb300;
+  animation: star-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+/* 依次点亮，像分数一点点蹦出来 */
+.star-2.on {
+  animation-delay: 0.14s;
+}
+
+.star-3.on {
+  animation-delay: 0.28s;
+}
+
+@keyframes star-pop {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .score-msg {
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #6b7280;
-  flex: 1;
-  min-width: 0;
+  text-align: center;
 }
 
 .speak-hint {
