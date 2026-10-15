@@ -416,6 +416,102 @@ if (!fs.existsSync(recPath)) {
   }
 }
 
+/* ---------- 4h. 配对闯关（学完当天 5 词后的第 4 步）----------
+   出题逻辑在 utils/match.js；那条「右列不能等于左列原序」的硬约束
+   由 `node match-check.cjs`（25 项）行为验证，这里只固化接线别被拆掉。 */
+console.log('[4h] 配对闯关');
+const matchPath = path.join(root, 'utils', 'match.js');
+if (!fs.existsSync(matchPath)) {
+  fail('缺少 utils/match.js（配对出题逻辑）');
+} else {
+  const mjs = fs.readFileSync(matchPath, 'utf8');
+  if (!/buildPuzzle/.test(mjs) || !/isMatch/.test(mjs)) {
+    fail('utils/match.js 未导出 buildPuzzle / isMatch');
+  } else if (!/module\.exports/.test(mjs)) {
+    fail('utils/match.js 缺少 module.exports');
+  } else {
+    pass('utils/match.js 提供 buildPuzzle / isMatch');
+  }
+
+  const learnJs2 = fs.readFileSync(path.join(root, 'pages', 'learn', 'learn.js'), 'utf8');
+  if (!/require\('\.\.\/\.\.\/utils\/match'\)/.test(learnJs2)) {
+    fail('learn.js 未引入 utils/match');
+  } else if (
+    learnJs2.indexOf('startMatch(') === -1 ||
+    learnJs2.indexOf('tryMatch(') === -1 ||
+    learnJs2.indexOf('onMatchFinish(') === -1
+  ) {
+    fail('learn.js 缺少配对方法（startMatch / tryMatch / onMatchFinish）');
+  } else if (learnJs2.indexOf('clearMatchTimer(') === -1) {
+    fail('learn.js 缺少 clearMatchTimer（页面卸载后定时器仍会 setData）');
+  } else {
+    pass('learn.js 已接入配对流程（含定时器清理）');
+  }
+
+  const learnWxml2 = fs.readFileSync(path.join(root, 'pages', 'learn', 'learn.wxml'), 'utf8');
+  if (learnWxml2.indexOf('match-board') === -1) {
+    fail('learn.wxml 缺少配对棋盘（match-board）');
+  } else if (learnWxml2.indexOf('onPickMatchLeft') === -1 || learnWxml2.indexOf('onPickMatchRight') === -1) {
+    fail('learn.wxml 缺少配对点击绑定（onPickMatchLeft / onPickMatchRight）');
+  } else if (!/step === 4/.test(learnWxml2)) {
+    fail('learn.wxml 未按 step === 4 渲染配对卡片');
+  } else if (/第 \{\{step\}\}\/3 步/.test(learnWxml2)) {
+    // 第 5 个词有 4 步，硬编码 /3 会让步数显示不对
+    fail('learn.wxml 步数标签仍是硬编码 /3（应使用 maxStep）');
+  } else if (learnWxml2.indexOf('{{step}}/{{maxStep}}') === -1) {
+    fail('learn.wxml 步数标签未使用 maxStep');
+  } else {
+    pass('配对棋盘渲染正确，步数标签已动态化（maxStep）');
+  }
+}
+
+/* ---------- 4i. WXML 标签平衡（不平衡 = 页面白屏，且平台预览只编译入口页，抓不到）----------
+   ⚠️ preview-compile 只编译入口页 index，**不会编译其它页面的 wxml** ——
+   所以 learn/mine/... 的 wxml 写坏了，编译照样报 ready，真机点进去才白屏。
+   这里对所有页面做一次标签配对检查兜住。 */
+console.log('[4i] WXML 标签平衡');
+{
+  // WXML 里这些标签是自闭合语义，不参与配对
+  const VOID_TAGS = ['image', 'input', 'import', 'include', 'wxs', 'icon', 'slot'];
+  const wxmlFiles = [];
+  (function collect(dir) {
+    for (const name of fs.readdirSync(dir)) {
+      const p = path.join(dir, name);
+      if (fs.statSync(p).isDirectory()) collect(p);
+      else if (name.endsWith('.wxml')) wxmlFiles.push(p);
+    }
+  })(root);
+
+  let structuralError = null;
+  for (const file of wxmlFiles) {
+    const src = fs.readFileSync(file, 'utf8').replace(/<!--[\s\S]*?-->/g, '');
+    const stack = [];
+    const re = /<(\/?)([a-zA-Z][\w-]*)((?:"[^"]*"|'[^']*'|[^>"'])*?)(\/?)>/g;
+    let m;
+    let err = null;
+    while ((m = re.exec(src))) {
+      const isClose = m[1] === '/';
+      const tag = m[2];
+      const isSelf = m[4] === '/';
+      if (isClose) {
+        const top = stack.pop();
+        if (top !== tag) {
+          err = `</${tag}> 与 <${top || '(空)'}> 不匹配（偏移 ${m.index}）`;
+          break;
+        }
+      } else if (!isSelf && VOID_TAGS.indexOf(tag) === -1) {
+        stack.push(tag);
+      }
+    }
+    if (!err && stack.length) err = '未闭合：' + stack.join(' > ');
+    if (err) {
+      fail(`${rel(file)} 标签不平衡 → ${err}`);
+      structuralError = true;
+    }
+  }
+  if (!structuralError) pass(`${wxmlFiles.length} 个 wxml 标签全部平衡`);
+}
+
 /* ---------- 5. wxml 事件处理函数都有定义 ---------- */
 console.log('[5] 事件处理函数');
 let missingHandler = 0;

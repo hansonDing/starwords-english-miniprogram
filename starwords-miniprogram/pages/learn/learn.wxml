@@ -9,7 +9,7 @@
         wx:key="id"
       ></view>
     </view>
-    <text class="step-label">第 {{step}}/3 步</text>
+    <text class="step-label">第 {{step}}/{{maxStep}} 步</text>
   </view>
 
   <!-- Step 1 · 听一听 -->
@@ -114,7 +114,48 @@
       <text class="feedback-text {{quizCorrect ? 'good' : 'bad'}}">
         {{quizCorrect ? '答对啦！⭐' : '正确答案：' + quiz.options[quiz.answerIdx].meaning}}
       </text>
-      <view class="btn-primary" bindtap="onNextWord"><text>下一个 →</text></view>
+      <!-- 最后一个单词：下一步是整组配对闯关，按钮文案跟着变（maxStep 为 4 即最后一个词） -->
+      <view class="btn-primary" bindtap="onNextWord">
+        <text>{{maxStep === 4 ? '去配对 →' : '下一个 →'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Step 4 · 配对闯关：5 个单词 ↔ 5 个含义（右列已打乱），只在最后一个单词之后出现一次 -->
+  <view class="card main-card" wx:if="{{step === 4}}">
+    <text class="step-title">🔗 把单词和意思连起来</text>
+    <text class="match-hint">先点左边的单词，再点右边对应的意思</text>
+
+    <view class="match-board">
+      <view class="match-col">
+        <view
+          class="match-item match-word {{item.done ? 'done' : ''}} {{item.picked ? 'picked' : ''}} {{item.wrong ? 'wrong' : ''}}"
+          wx:for="{{matchLeft}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="onPickMatchLeft"
+        >
+          <text class="match-text">{{item.text}}</text>
+        </view>
+      </view>
+      <view class="match-col">
+        <view
+          class="match-item match-meaning {{item.done ? 'done' : ''}} {{item.picked ? 'picked' : ''}} {{item.wrong ? 'wrong' : ''}}"
+          wx:for="{{matchRight}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="onPickMatchRight"
+        >
+          <text class="match-text">{{item.text}}</text>
+        </view>
+      </view>
+    </view>
+
+    <text class="match-progress">已配对 {{matchSolved}}/{{matchTotal}}</text>
+
+    <view class="match-done-bar" wx:if="{{matchAllDone}}">
+      <text class="match-done-text">全部配对成功！</text>
+      <view class="btn-primary match-next-btn" bindtap="onMatchFinish"><text>看奖励动画 🎉</text></view>
     </view>
   </view>
 </block>

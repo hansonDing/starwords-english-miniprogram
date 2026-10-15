@@ -3,6 +3,7 @@ const store = require('../../utils/store');
 const scheduler = require('../../utils/scheduler');
 const audio = require('../../utils/audio');
 const recordScore = require('../../utils/record-score');
+const match = require('../../utils/match');
 const leaderboard = require('../../utils/leaderboard');
 
 const SPEAK_GOOD = 95;
@@ -26,6 +27,8 @@ Page({
     week: 1,
     wordIndex: 0,
     step: 1,
+    // 最后一个单词多一步「配对闯关」：前 4 个词 3 步，第 5 个词 4 步
+    maxStep: 3,
     word: null,
     quiz: null,
     quizAnswered: false,
@@ -40,6 +43,12 @@ Page({
     autoLevel: '',
     autoStarCount: 0,
     autoMsg: '',
+    // 配对闯关（第 4 步）：左列单词 / 右列打乱的中文含义
+    matchLeft: [],
+    matchRight: [],
+    matchSolved: 0,
+    matchTotal: 0,
+    matchAllDone: false,
     finishedCount: 0,
     weekWordsView: [],
     newAchievements: [],
@@ -54,6 +63,10 @@ Page({
   recordPath: null,
   playbackCtx: null,
   rewardTimers: [],
+  // 配对闯关：matchPlayed 保证整组只出现一次；matchWords 存原词对象以取读音
+  matchPlayed: false,
+  matchWords: [],
+  matchTimer: null,
 
   onLoad() {
     const progress = store.getProgress();
@@ -66,11 +79,14 @@ Page({
     });
     const startIdx = firstIdx === -1 ? 0 : firstIdx;
     this.wordScores = {};
+    // 从最后一个词进入才需要第 4 步配对；中途恢复学习则仍是 3 步
+    const startsAtLast = startIdx === words.length - 1;
     this.setData({
       week,
       wordIndex: startIdx,
       word: words[startIdx],
       step: 1,
+      maxStep: startsAtLast ? 4 : 3,
       weekWordsView: words.map((w) => ({ id: w.id, learned: false })),
     });
     this.initRecorder();
@@ -80,6 +96,7 @@ Page({
 
   onUnload() {
     this.clearRewardTimers();
+    this.clearMatchTimer();
     audio.stop();
     if (this.playbackCtx) {
       try {
@@ -236,6 +253,104 @@ Page({
     this.setData({ step });
   },
 
+  /* ---------- Step 4：配对闯关（学完当天 5 词后的整组复习） ---------- */
+  // 只有最后一个单词才会走到这里；前 4 个词仍是 3 步。
+  // 出题逻辑在 utils/match.js（纯函数，由 match-check.cjs 锁住「右列不能是原序」）。
+  clearMatchTimer() {
+    if (this.matchTimer) {
+      clearTimeout(this.matchTimer);
+      this.matchTimer = null;
+    }
+  },
+
+  startMatch(words) {
+    this.clearMatchTimer();
+    this.matchWords = words || [];
+    const puzzle = match.buildPuzzle(this.matchWords);
+    const blank = (it) => Object.assign({}, it, { picked: false, done: false, wrong: false });
+    this.setData({
+      matchLeft: puzzle.left.map(blank),
+      matchRight: puzzle.right.map(blank),
+      matchSolved: 0,
+      matchTotal: puzzle.left.length,
+      matchAllDone: false,
+    });
+  },
+
+  onPickMatchLeft(e) {
+    const id = e.currentTarget.dataset.id;
+    const item = this.data.matchLeft.find((x) => x.id === id);
+    if (!item || item.done) return; // 已配对的锁定，重复点无效
+    // 同一列只允许一个选中
+    this.setData({
+      matchLeft: this.data.matchLeft.map((x) => Object.assign({}, x, { picked: x.id === id, wrong: false })),
+    });
+    // 点单词顺便听读音（配不上也不打扰，只是加深印象）
+    const w = this.matchWords.find((x) => x.id === id);
+    if (w) audio.play(w.audio).catch(() => {});
+    this.tryMatch();
+  },
+
+  onPickMatchRight(e) {
+    const id = e.currentTarget.dataset.id;
+    const item = this.data.matchRight.find((x) => x.id === id);
+    if (!item || item.done) return;
+    if (!this.data.matchLeft.some((x) => x.picked)) {
+      wx.showToast({ title: '先点左边的单词哦', icon: 'none' });
+      return;
+    }
+    this.setData({
+      matchRight: this.data.matchRight.map((x) => Object.assign({}, x, { picked: x.id === id, wrong: false })),
+    });
+    this.tryMatch();
+  },
+
+  // 两边都有选中时才判：对 → 双双锁定变绿；错 → 抖动 600ms 后自动复位（零惩罚）
+  tryMatch() {
+    const li = this.data.matchLeft.find((x) => x.picked);
+    const ri = this.data.matchRight.find((x) => x.picked);
+    if (!li || !ri) return;
+
+    if (match.isMatch(li.id, ri.id)) {
+      const left = this.data.matchLeft.map((x) => (x.id === li.id ? Object.assign({}, x, { done: true, picked: false }) : x));
+      const right = this.data.matchRight.map((x) => (x.id === ri.id ? Object.assign({}, x, { done: true, picked: false }) : x));
+      const solved = left.filter((x) => x.done).length;
+      const allDone = solved >= left.length;
+      this.setData({ matchLeft: left, matchRight: right, matchSolved: solved, matchAllDone: allDone });
+      if (allDone && typeof wx.vibrateShort === 'function') {
+        try {
+          wx.vibrateShort({ type: 'light' });
+        } catch (e) {
+          /* 机型不支持则忽略 */
+        }
+      }
+      return;
+    }
+
+    // 配错：两边抖动提示。⚠️ 同时清掉 picked —— 否则孩子在这 600ms 内点新单词时，
+    // 会立刻拿对侧残留的旧选择去比对，白白再判一次错。
+    this.setData({
+      matchLeft: this.data.matchLeft.map((x) => (x.picked ? Object.assign({}, x, { picked: false, wrong: true }) : x)),
+      matchRight: this.data.matchRight.map((x) => (x.picked ? Object.assign({}, x, { picked: false, wrong: true }) : x)),
+    });
+    this.clearMatchTimer();
+    this.matchTimer = setTimeout(() => {
+      this.matchTimer = null;
+      // 只复位标了 wrong 的项：若这 600ms 内孩子已经点选了下一次，不要动他的新选择
+      this.setData({
+        matchLeft: this.data.matchLeft.map((x) => (x.wrong ? Object.assign({}, x, { wrong: false }) : x)),
+        matchRight: this.data.matchRight.map((x) => (x.wrong ? Object.assign({}, x, { wrong: false }) : x)),
+      });
+    }, 600);
+  },
+
+  // 全部配对完成 → 接进原有的庆祝三幕
+  onMatchFinish() {
+    this.clearMatchTimer();
+    this.setData({ phase: 'celebrate' });
+    this.startRewardShow(getWeekWords(this.data.week));
+  },
+
   onNextWord() {
     const word = this.data.word;
     const score = this.wordScores[word.id] || SPEAK_SKIP;
@@ -249,25 +364,50 @@ Page({
     const words = getWeekWords(this.data.week);
 
     if (nextIndex >= words.length) {
-      // 本周 5 词全部完成 → 日会话完成
+      // 5 词全部学完 → **立刻**结算日会话。
+      // 刻意放在配对之前：孩子在配对环节中途退出，也不会丢掉当天的完成记录与连续天数。
       store.completeDailySession(MAX_WEEK, scheduler.localToday());
       store.refreshAchievements();
       store.syncToCloud();
       // 连学天数 / 当前周次也变了，再推一次排行榜
       leaderboard.push();
+      const newAchievements = added.map((id) => store.ACHIEVEMENTS.find((a) => a.id === id)).filter(Boolean);
+
+      if (!this.matchPlayed) {
+        // 第 4 步：整组配对闯关（只在最后一个词之后出现一次，由 matchPlayed 把住）
+        this.matchPlayed = true;
+        this.setData({
+          step: 4,
+          maxStep: 4,
+          weekWordsView: view,
+          finishedCount,
+          newAchievements,
+          quiz: null,
+          quizAnswered: false,
+          quizCorrect: false,
+          pickedIdx: -1,
+        });
+        this.startMatch(words);
+        return;
+      }
+
       this.setData({
         phase: 'celebrate',
         weekWordsView: view,
         finishedCount,
-        newAchievements: added.map((id) => store.ACHIEVEMENTS.find((a) => a.id === id)).filter(Boolean),
+        newAchievements,
       });
       this.startRewardShow(words);
       return;
     }
+    // 推进到最后一个词时要立刻把步数上限切到 4：
+    // 否则第 5 个词会显示「第 4/3 步」，步骤 3 的按钮也不会变成「去配对 →」
+    const enteringLastWord = nextIndex === words.length - 1;
     this.setData({
       wordIndex: nextIndex,
       word: words[nextIndex],
       step: 1,
+      maxStep: enteringLastWord ? 4 : 3,
       quiz: null,
       quizAnswered: false,
       quizCorrect: false,
