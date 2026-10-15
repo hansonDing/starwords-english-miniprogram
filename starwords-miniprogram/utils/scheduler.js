@@ -41,6 +41,8 @@ function getDueReviews(progress, today, limit) {
 function applyReviewResult(wp, correct, today) {
   const stage = correct ? Math.min(wp.reviewStage + 1, GRADUATED_STAGE) : Math.max(wp.reviewStage - 1, 0);
   const graduated = stage >= GRADUATED_STAGE;
+  // ⚠️ 这里是**重建对象**（白名单字段），新增的 word 字段必须显式透传，否则会被静默丢掉。
+  // stars 是星星账本的去重依据，丢了会导致同一个词重复计星。
   return {
     wordId: wp.wordId,
     learned: wp.learned,
@@ -50,6 +52,7 @@ function applyReviewResult(wp, correct, today) {
     learnedDate: wp.learnedDate,
     reviewStage: stage,
     nextReviewDate: graduated ? null : addDays(today, correct ? REVIEW_INTERVALS[stage] : 1),
+    stars: wp.stars || 0,
   };
 }
 

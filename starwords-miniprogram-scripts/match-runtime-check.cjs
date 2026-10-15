@@ -62,6 +62,8 @@ const toasts = [];
 let playCalls = 0;
 let vibrateCalls = 0;
 const daySettled = [];
+// 星星结算调用记录（learn.js 每学完一个词会调 store.creditStars）
+const starCredits = [];
 
 // onLoad 会读 store.getProgress() 决定从第几个词开始，所以这必须是可替换的桩
 let progressStub = { currentWeek: 1, words: [] };
@@ -71,6 +73,9 @@ const stubs = {
   '../../utils/store': {
     getProgress: function () { return progressStub; },
     markWordLearned: function () {},
+    // 星星账本：本自检只关心配对流程，这里桩掉并记录调用次数供断言
+    creditStars: function (wordId, starCount) { starCredits.push({ wordId: wordId, starCount: starCount }); return 0; },
+    getStarBalance: function () { return 0; },
     refreshAchievements: function () { return []; },
     completeDailySession: function (a, b) { daySettled.push(b); },
     syncToCloud: function () {},
@@ -277,6 +282,10 @@ const find = function (arr, id) {
   check(p4.data.maxStep === 4, '步数上限切到 4（标签显示 第 4/4 步）');
   check(p4.data.matchLeft.length === 5, '配对题目已生成');
   check(p4.matchPlayed === true, 'matchPlayed 已置位（防止重复出现）');
+  check(
+    starCredits.length > 0 && starCredits[starCredits.length - 1].wordId === 'w1-5',
+    '学完一个词会结算星星（store.creditStars 被调用）'
+  );
 
   const p5 = makePage();
   p5.data.week = 1;

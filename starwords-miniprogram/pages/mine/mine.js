@@ -11,12 +11,15 @@ Page({
     syncText: '',
     leaderboard: [],
     myRank: 0,
+    // 跟读攒下的星星总数（账户余额，将来可用于消耗活动）
+    stars: 0,
     cloudAvailable: cloudAvailable,
     cloudError: cloudError,
   },
 
   onShow() {
     this.loadNickname();
+    this.setData({ stars: store.getStarBalance() });
     // 先确定登录态（isMe / myRank 依赖 userId），再把自己的最新昵称与学习量推上去，
     // 最后拉榜 —— 顺序不能乱，否则会出现「榜上还是旧名字/旧学习量」
     this.refreshLogin().then(() => this.refreshBoard());

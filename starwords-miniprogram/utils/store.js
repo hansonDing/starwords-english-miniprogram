@@ -14,6 +14,9 @@ const DEFAULT_PROGRESS = {
   streakDays: 0,
   lastLearnedDate: null,
   achievements: [],
+  // 跟读攒下的星星总数（账户余额）。只增不减地累积，未来做「消耗活动」时从这里扣。
+  // 每条 word 上的 stars 记录「该词已计入的星数」，用于去重（同一个词只记一次最好成绩）。
+  stars: 0,
 };
 
 function loadProgress() {
@@ -79,10 +82,43 @@ function markWordLearned(wordId, score) {
           learnedDate: scheduler.localToday(),
           reviewStage: 0,
           nextReviewDate: null, // 学完当天由 completeDailySession 启动复习调度
+          stars: 0, // 该词已计入的星数（由 creditStars 填）
         },
       ]),
     });
   });
+}
+
+/** 星星上限：跟读评分的最高档 */
+const MAX_STARS_PER_WORD = 3;
+
+/**
+ * 结算一个单词的星星：**每个单词只记一次，取最好成绩**。
+ * 只有刷新了更好成绩才把差额计入账户余额，所以重复调用不会重复加。
+ *
+ * ⚠️ 调用前必须已经 markWordLearned（需要词条存在）。返回本次实际加到的星数（0 表示没加）。
+ */
+function creditStars(wordId, starCount) {
+  const n = Math.max(0, Math.min(MAX_STARS_PER_WORD, Math.floor(starCount || 0)));
+  if (n === 0) return 0; // 0 星（完全没听到声音）不加星
+  let gained = 0;
+  setProgress((prev) => {
+    const idx = prev.words.findIndex((w) => w.wordId === wordId);
+    if (idx < 0) return prev; // 词条不存在 → 不加（防止绕过账本重复计星）
+    const w = prev.words[idx];
+    const credited = w.stars || 0;
+    if (n <= credited) return prev; // 已有更好的成绩 → 不加
+    gained = n - credited;
+    const words = prev.words.slice();
+    words[idx] = Object.assign({}, w, { stars: n });
+    return Object.assign({}, prev, { words: words, stars: (prev.stars || 0) + gained });
+  });
+  return gained;
+}
+
+/** 账户星星余额 */
+function getStarBalance() {
+  return current.stars || 0;
 }
 
 function recordReviewResult(wordId, correct, date) {
@@ -230,6 +266,8 @@ module.exports = {
   getProgress,
   setProgress,
   markWordLearned,
+  creditStars,
+  getStarBalance,
   recordReviewResult,
   completeDailySession,
   resetProgress,

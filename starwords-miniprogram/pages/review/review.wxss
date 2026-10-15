@@ -268,6 +268,104 @@
   color: #9ca3af;
 }
 
+/* 学习记录：总数 + 翻页 */
+.records-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+  padding: 0 6rpx;
+}
+
+.records-title {
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #374151;
+}
+
+.records-sub {
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+.load-more {
+  margin-top: 24rpx;
+}
+
+.records-end {
+  display: block;
+  margin-top: 24rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+/* 错题本（复习结束时展示） */
+.wrong-card {
+  margin-top: 24rpx;
+}
+
+.wrong-head {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #ef4444;
+}
+
+.wrong-sub {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+.wrong-item {
+  display: flex;
+  align-items: center;
+  margin-top: 20rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 20rpx;
+  background: #fff7f7;
+}
+
+.wrong-img {
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 18rpx;
+  background: #ffffff;
+  margin-right: 20rpx;
+}
+
+.wrong-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wrong-word-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10rpx;
+}
+
+.wrong-word {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #1f2937;
+}
+
+.wrong-phonetic {
+  font-size: 22rpx;
+  color: #9ca3af;
+}
+
+.wrong-meaning {
+  margin-top: 4rpx;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #ef4444;
+}
+
 /* 空状态 */
 .empty {
   display: flex;

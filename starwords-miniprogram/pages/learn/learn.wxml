@@ -214,6 +214,12 @@
     <text class="celebrate-title">太棒了！今天的单词全部学会！</text>
     <text class="celebrate-sub">明天会解锁新的 5 个单词哦</text>
 
+    <!-- 本次跟读攒下的星星（计入「我的」页的账户总数） -->
+    <view class="celebrate-stars" wx:if="{{earnedStars > 0}}">
+      <text class="celebrate-stars-icon">⭐</text>
+      <text class="celebrate-stars-text">本次攒下 {{earnedStars}} 颗星</text>
+    </view>
+
     <view class="achv-list" wx:if="{{newAchievements.length > 0}}">
       <text class="achv-head">获得新成就</text>
       <view class="achv-item" wx:for="{{newAchievements}}" wx:key="id">

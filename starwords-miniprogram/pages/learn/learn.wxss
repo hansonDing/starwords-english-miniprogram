@@ -612,6 +612,28 @@
   color: #6b7280;
 }
 
+/* 本次攒下的星星（纯 CSS，无新增资源） */
+.celebrate-stars {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-top: 24rpx;
+  padding: 14rpx 36rpx;
+  border-radius: 44rpx;
+  background: #fff8e6;
+  border: 3rpx solid #fbd77a;
+}
+
+.celebrate-stars-icon {
+  font-size: 34rpx;
+}
+
+.celebrate-stars-text {
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #b45309;
+}
+
 .achv-list {
   margin-top: 40rpx;
   width: 100%;

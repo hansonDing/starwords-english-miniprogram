@@ -50,6 +50,8 @@ Page({
     matchTotal: 0,
     matchAllDone: false,
     finishedCount: 0,
+    // 本次会话通过跟读攒到的星星（庆祝页展示）
+    earnedStars: 0,
     weekWordsView: [],
     newAchievements: [],
     // 奖励动画片：1 星星出场 → 2 跳舞撒花 → 3 单词巡游
@@ -63,6 +65,10 @@ Page({
   recordPath: null,
   playbackCtx: null,
   rewardTimers: [],
+  // 星星账本：wordBestStars = 当前单词录制过的**最好**星级（Step2 可反复重录，取最好）；
+  // sessionStars = 本次会话累计加到的星数
+  wordBestStars: 0,
+  sessionStars: 0,
   // 配对闯关：matchPlayed 保证整组只出现一次；matchWords 存原词对象以取读音
   matchPlayed: false,
   matchWords: [],
@@ -79,6 +85,8 @@ Page({
     });
     const startIdx = firstIdx === -1 ? 0 : firstIdx;
     this.wordScores = {};
+    this.wordBestStars = 0;
+    this.sessionStars = 0;
     // 从最后一个词进入才需要第 4 步配对；中途恢复学习则仍是 3 步
     const startsAtLast = startIdx === words.length - 1;
     this.setData({
@@ -159,6 +167,8 @@ Page({
   gradeRecording(path) {
     recordScore.gradeFile(path).then((r) => {
       if (!r) return; // 解析失败就不显示评分，不影响原有流程
+      // Step2 允许反复重录，星星按**最好的一次**计入账户（不是最后一次）
+      if (r.starCount > this.wordBestStars) this.wordBestStars = r.starCount;
       this.setData({
         autoLevel: r.level,
         autoStarCount: r.starCount,
@@ -357,6 +367,10 @@ Page({
     store.markWordLearned(word.id, score);
     // 学习量变化后立刻更新排行榜（未登录时静默跳过）
     leaderboard.push();
+    // 结算跟读星星（必须在 markWordLearned 之后：账本需要词条已存在）。
+    // 每个单词只记一次、取本次录制的最好成绩，重复调用不会重复加。
+    this.sessionStars += store.creditStars(word.id, this.wordBestStars);
+    const earnedStars = this.sessionStars;
     const added = store.refreshAchievements();
     const view = this.data.weekWordsView.map((v) => (v.id === word.id ? Object.assign({}, v, { learned: true }) : v));
     const finishedCount = view.filter((v) => v.learned).length;
@@ -381,6 +395,7 @@ Page({
           maxStep: 4,
           weekWordsView: view,
           finishedCount,
+          earnedStars,
           newAchievements,
           quiz: null,
           quizAnswered: false,
@@ -395,6 +410,7 @@ Page({
         phase: 'celebrate',
         weekWordsView: view,
         finishedCount,
+        earnedStars,
         newAchievements,
       });
       this.startRewardShow(words);
@@ -403,6 +419,8 @@ Page({
     // 推进到最后一个词时要立刻把步数上限切到 4：
     // 否则第 5 个词会显示「第 4/3 步」，步骤 3 的按钮也不会变成「去配对 →」
     const enteringLastWord = nextIndex === words.length - 1;
+    // 换单词：重新开始记录这一个词的「最好星级」
+    this.wordBestStars = 0;
     this.setData({
       wordIndex: nextIndex,
       word: words[nextIndex],
@@ -419,6 +437,7 @@ Page({
       autoLevel: '',
       autoStarCount: 0,
       autoMsg: '',
+      earnedStars,
       weekWordsView: view,
       finishedCount,
     });

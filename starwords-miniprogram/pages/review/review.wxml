@@ -51,6 +51,30 @@
       <text class="empty-text">复习完成！答对 {{reviewedCount}}/{{totalReviewed}}</text>
       <text class="empty-sub">答对的单词会安排更远期的复习</text>
     </view>
+
+    <!-- 错题本：本轮做错的单词 + 正确答案（全对时不渲染） -->
+    <view class="card wrong-card" wx:if="{{reviewDone && wrongList.length > 0}}">
+      <text class="wrong-head">📝 错题本（{{wrongList.length}}）</text>
+      <text class="wrong-sub">这些词再记一记，明天还会见到它们</text>
+      <view class="wrong-item" wx:for="{{wrongList}}" wx:key="id">
+        <view class="wrong-img sprite">
+          <image
+            class="sprite-img"
+            src="../../assets/sprite.jpg"
+            mode="scaleToFill"
+            style="transform: translate({{item.imgTx}}%, {{item.imgTy}}%)"
+            binderror="onRecordImgError"
+          />
+        </view>
+        <view class="wrong-info">
+          <view class="wrong-word-row">
+            <text class="wrong-word">{{item.word}}</text>
+            <text class="wrong-phonetic">{{item.phonetic}}</text>
+          </view>
+          <text class="wrong-meaning">正确答案：{{item.meaning}}</text>
+        </view>
+      </view>
+    </view>
   </block>
 
   <!-- ===== 拼写挑战 ===== -->
@@ -111,31 +135,42 @@
 
   <!-- ===== 学习记录 ===== -->
   <block wx:if="{{mode === 'records'}}">
-    <view class="card empty" wx:if="{{records.length === 0}}">
+    <view class="card empty" wx:if="{{recordsTotal === 0}}">
       <text class="empty-icon">⭐</text>
       <text class="empty-text">还没有学习记录</text>
+      <text class="empty-sub">去学习页学几个单词吧</text>
     </view>
-    <view class="records" wx:else>
-      <view class="card record-item" wx:for="{{records}}" wx:key="id">
-        <view class="record-img sprite">
-          <image
-            class="sprite-img"
-            src="../../assets/sprite.jpg"
-            mode="scaleToFill"
-            style="transform: translate({{item.imgTx}}%, {{item.imgTy}}%)"
-            data-idx="{{index}}"
-            binderror="onRecordImgError"
-          />
-        </view>
-        <view class="record-info">
-          <text class="record-word">{{item.word}}</text>
-          <text class="record-meaning">{{item.meaning}}</text>
-        </view>
-        <view class="record-right">
-          <text class="record-score">{{item.score}}分</text>
-          <text class="record-date">{{item.date}}</text>
+    <block wx:else>
+      <view class="records-head">
+        <text class="records-title">已学 {{recordsTotal}} 个单词</text>
+        <text class="records-sub">已显示 {{records.length}} 个</text>
+      </view>
+      <view class="records">
+        <view class="card record-item" wx:for="{{records}}" wx:key="id">
+          <view class="record-img sprite">
+            <image
+              class="sprite-img"
+              src="../../assets/sprite.jpg"
+              mode="scaleToFill"
+              style="transform: translate({{item.imgTx}}%, {{item.imgTy}}%)"
+              data-idx="{{index}}"
+              binderror="onRecordImgError"
+            />
+          </view>
+          <view class="record-info">
+            <text class="record-word">{{item.word}}</text>
+            <text class="record-meaning">{{item.meaning}}</text>
+          </view>
+          <view class="record-right">
+            <text class="record-score">{{item.score}}分</text>
+            <text class="record-date">{{item.date}}</text>
+          </view>
         </view>
       </view>
-    </view>
+      <view class="btn-ghost load-more" wx:if="{{recordsHasMore}}" bindtap="onLoadMoreRecords">
+        <text>加载更多 ↓</text>
+      </view>
+      <text class="records-end" wx:else>已显示全部 {{recordsTotal}} 个单词</text>
+    </block>
   </block>
 </view>

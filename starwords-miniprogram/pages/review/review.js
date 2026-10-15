@@ -5,6 +5,9 @@ const audio = require('../../utils/audio');
 
 const DISTRACTORS = 'abcdefghilmnoprstuw';
 
+// 学习记录每页条数（「加载更多」每次追加这么多）
+const RECORDS_PAGE_SIZE = 10;
+
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -28,6 +31,9 @@ Page({
     pickedIdx: -1,
     reviewDone: false,
     reviewedCount: 0,
+    totalReviewed: 0,
+    // 错题本：本轮复习做错的单词（含正确含义），复习结束时展示
+    wrongList: [],
     // 拼写
     spellWords: [],
     spellIndex: -1,
@@ -36,9 +42,13 @@ Page({
     spellDone: false,
     // 记录
     records: [],
+    recordsTotal: 0,
+    recordsHasMore: false,
   },
 
   sessionResults: [],
+  // 全部已学单词（按最近学习倒序）。只显示前若干条，避免一次性塞给 setData
+  allRecords: [],
 
   onShow() {
     this.refresh();
@@ -52,32 +62,57 @@ Page({
     const progress = store.getProgress();
     const today = scheduler.localToday();
     const due = scheduler.getDueReviews(progress, today).map((wp) => getWordById(wp.wordId)).filter(Boolean);
+    // 学习记录：显示**所有**学过的单词（按最近学习倒序），首页只取一页，其余靠「加载更多」追加
     const learnedIds = progress.words
       .filter((w) => w.learned)
-      .sort((a, b) => (a.lastAttemptAt < b.lastAttemptAt ? 1 : -1))
-      .slice(0, 12);
-    const records = learnedIds.map((wp) => {
-      const wd = getWordById(wp.wordId);
-      return {
-        id: wp.wordId,
-        word: wd ? wd.word : wp.wordId,
-        meaning: wd ? wd.meaning : '',
-        imgTx: wd ? wd.imgTx : 0,
-        imgTy: wd ? wd.imgTy : 0,
-        score: wp.score,
-        date: wp.learnedDate || '',
-      };
+      .sort((a, b) => (a.lastAttemptAt < b.lastAttemptAt ? 1 : -1));
+    this.allRecords = learnedIds
+      .map((wp) => {
+        const wd = getWordById(wp.wordId);
+        if (!wd) return null;
+        return {
+          id: wp.wordId,
+          word: wd.word,
+          meaning: wd.meaning,
+          imgTx: wd.imgTx,
+          imgTy: wd.imgTy,
+          score: wp.score,
+          date: wp.learnedDate || '',
+        };
+      })
+      .filter(Boolean);
+    const firstPage = this.allRecords.slice(0, RECORDS_PAGE_SIZE);
+    this.setData({
+      dueWords: due,
+      records: firstPage,
+      recordsTotal: this.allRecords.length,
+      recordsHasMore: this.allRecords.length > firstPage.length,
+      reviewDone: false,
+      quizIndex: -1,
+      spellDone: false,
+      spellIndex: -1,
+      wrongList: [],
     });
-    this.setData({ dueWords: due, records, reviewDone: false, quizIndex: -1, spellDone: false, spellIndex: -1 });
     if (this.data.mode === 'quick' && due.length > 0) {
       this.startQuickQuiz();
     }
   },
 
+  /** 学习记录：再显示一页 */
+  onLoadMoreRecords() {
+    const shown = this.data.records.length;
+    if (shown >= this.allRecords.length) return;
+    const next = this.allRecords.slice(0, shown + RECORDS_PAGE_SIZE);
+    this.setData({
+      records: next,
+      recordsHasMore: next.length < this.allRecords.length,
+    });
+  },
+
   /* ---------- 模式切换 ---------- */
   onModeChange(e) {
     const mode = e.currentTarget.dataset.mode;
-    this.setData({ mode, reviewDone: false, spellDone: false, quizIndex: -1, spellIndex: -1, quizAnswered: false });
+    this.setData({ mode, reviewDone: false, spellDone: false, quizIndex: -1, spellIndex: -1, quizAnswered: false, wrongList: [] });
     if (mode === 'quick') this.startQuickQuiz();
     if (mode === 'spelling') this.startSpelling();
   },
@@ -126,12 +161,29 @@ Page({
     const next = this.data.quizIndex + 1;
     if (next >= this.data.dueWords.length) {
       const correctCount = this.sessionResults.filter((r) => r.correct).length;
+      // 错题本：本轮答错的单词 + 正确含义（复习结束时给孩子一个「回头看」的清单）
+      const wrongList = this.sessionResults
+        .filter((r) => !r.correct)
+        .map((r) => {
+          const wd = getWordById(r.wordId);
+          if (!wd) return null;
+          return {
+            id: r.wordId,
+            word: wd.word,
+            meaning: wd.meaning,
+            phonetic: wd.phonetic || '',
+            imgTx: wd.imgTx,
+            imgTy: wd.imgTy,
+          };
+        })
+        .filter(Boolean);
       store.refreshAchievements();
       this.setData({
         reviewDone: true,
         quizIndex: -1,
         reviewedCount: correctCount,
         totalReviewed: this.sessionResults.length,
+        wrongList: wrongList,
       });
       return;
     }

@@ -14,6 +14,18 @@
     </view>
   </view>
 
+  <!-- 星星账户：跟读攒下的星星，将来可以参加活动 -->
+  <view class="card star-card">
+    <view class="star-card-left">
+      <text class="star-card-icon">⭐</text>
+      <view class="star-card-info">
+        <text class="star-card-num">{{stars}}</text>
+        <text class="star-card-label">我的星星</text>
+      </view>
+    </view>
+    <text class="star-card-hint">攒下的星星，以后可以参加活动哦</text>
+  </view>
+
   <!-- 云服务不可用提示（本地学习不受影响） -->
   <view class="card cloud-warn" wx:if="{{!cloudAvailable}}">
     <text class="cloud-warn-title">云服务暂不可用</text>

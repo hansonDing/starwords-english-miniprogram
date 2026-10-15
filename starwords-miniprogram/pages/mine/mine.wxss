@@ -8,6 +8,48 @@
   margin-bottom: 24rpx;
 }
 
+/* 星星账户卡片（纯 CSS，无新增资源） */
+.star-card {
+  margin-bottom: 24rpx;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #fffaf0, #fff3d6);
+  border: 3rpx solid #fbd77a;
+}
+
+.star-card-left {
+  display: flex;
+  align-items: center;
+}
+
+.star-card-icon {
+  font-size: 68rpx;
+  margin-right: 24rpx;
+}
+
+.star-card-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.star-card-num {
+  font-size: 60rpx;
+  font-weight: 900;
+  line-height: 1.1;
+  color: #b45309;
+}
+
+.star-card-label {
+  font-size: 26rpx;
+  color: #a16207;
+}
+
+.star-card-hint {
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  color: #a16207;
+}
+
 .avatar {
   width: 110rpx;
   height: 110rpx;

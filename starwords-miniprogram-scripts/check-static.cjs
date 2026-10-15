@@ -512,6 +512,64 @@ console.log('[4i] WXML 标签平衡');
   if (!structuralError) pass(`${wxmlFiles.length} 个 wxml 标签全部平衡`);
 }
 
+/* ---------- 4j. 星星账户（跟读星星累计 + 每词只记一次最好成绩）----------
+   规则：每个单词只记一次、取最好成绩；账户余额 progress.stars 只增不减地累积。
+   坏掉是静默的（数字不对但界面正常），行为验证另跑 `node stars-check.cjs`。 */
+console.log('[4j] 星星账户');
+{
+  const storeSrc = fs.readFileSync(path.join(root, 'utils', 'store.js'), 'utf8');
+  const schedSrc = fs.readFileSync(path.join(root, 'utils', 'scheduler.js'), 'utf8');
+  const learnSrc = fs.readFileSync(path.join(root, 'pages', 'learn', 'learn.js'), 'utf8');
+  const mineWxml = fs.readFileSync(path.join(root, 'pages', 'mine', 'mine.wxml'), 'utf8');
+
+  if (!/DEFAULT_PROGRESS[\s\S]{0,600}?stars:\s*0/.test(storeSrc)) {
+    fail('store.js 的 DEFAULT_PROGRESS 缺少 stars 字段（账户余额）');
+  } else if (!/function creditStars\s*\(/.test(storeSrc) || !/function getStarBalance\s*\(/.test(storeSrc)) {
+    fail('store.js 缺少 creditStars() / getStarBalance()');
+  } else if (storeSrc.indexOf('creditStars,') === -1 || storeSrc.indexOf('getStarBalance,') === -1) {
+    fail('store.js 未导出 creditStars / getStarBalance');
+  } else if (!/credited/.test(storeSrc) || !/stars:\s*\(prev\.stars \|\| 0\) \+ gained/.test(storeSrc)) {
+    fail('creditStars 未按「只补差额」实现（同一个词会被重复计星）');
+  } else if (!/stars:\s*wp\.stars \|\| 0/.test(schedSrc)) {
+    fail('scheduler.applyReviewResult 未透传 stars（复习一次就会把去重依据丢掉）');
+  } else {
+    const mi = learnSrc.indexOf('store.markWordLearned(');
+    const ci = learnSrc.indexOf('store.creditStars(');
+    if (mi === -1 || ci === -1) {
+      fail('learn.js 未在学完一个词时结算星星（store.creditStars）');
+    } else if (ci < mi) {
+      fail('learn.js 的 creditStars 必须在 markWordLearned **之后**调用（账本需要词条已存在）');
+    } else if (mineWxml.indexOf('{{stars}}') === -1) {
+      fail('mine.wxml 未展示星星总数');
+    } else {
+      pass('星星账本接线正确（只补差额 / 先建词条再计星 / 我的页展示）');
+    }
+  }
+}
+
+/* ---------- 4k. 复习页：错题本 + 学习记录分页 ---------- */
+console.log('[4k] 复习错题本与记录分页');
+{
+  const reviewSrc = fs.readFileSync(path.join(root, 'pages', 'review', 'review.js'), 'utf8');
+  const reviewWxml = fs.readFileSync(path.join(root, 'pages', 'review', 'review.wxml'), 'utf8');
+
+  if (reviewSrc.indexOf('wrongList') === -1) {
+    fail('review.js 未构建错题列表（wrongList）');
+  } else if (reviewSrc.indexOf('onLoadMoreRecords') === -1) {
+    fail('review.js 缺少 onLoadMoreRecords()');
+  } else if (/\.slice\(0,\s*12\)/.test(reviewSrc)) {
+    fail('review.js 仍在截断学习记录为 12 条（应显示全部 + 分页）');
+  } else if (!/recordsTotal/.test(reviewSrc) || !/recordsHasMore/.test(reviewSrc)) {
+    fail('review.js 缺少分页状态 recordsTotal / recordsHasMore');
+  } else if (reviewWxml.indexOf('wrongList') === -1) {
+    fail('review.wxml 未渲染错题列表');
+  } else if (reviewWxml.indexOf('onLoadMoreRecords') === -1 || reviewWxml.indexOf('recordsHasMore') === -1) {
+    fail('review.wxml 未渲染「加载更多」按钮');
+  } else {
+    pass('错题本（含答案）+ 学习记录全量分页 接线正确');
+  }
+}
+
 /* ---------- 5. wxml 事件处理函数都有定义 ---------- */
 console.log('[5] 事件处理函数');
 let missingHandler = 0;
