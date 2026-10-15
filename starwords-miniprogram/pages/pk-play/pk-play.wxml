@@ -1,0 +1,137 @@
+<view class="page">
+  <!-- ============ 加载中 ============ -->
+  <view class="card tip-card" wx:if="{{mode === 'loading'}}">
+    <text class="tip-emoji">⏳</text>
+    <text class="tip-title">正在加载挑战…</text>
+  </view>
+
+  <!-- ============ 不能作答 ============ -->
+  <block wx:elif="{{mode === 'blocked'}}">
+    <view class="card tip-card">
+      <text class="tip-emoji">🙈</text>
+      <text class="tip-title">{{blockedTitle}}</text>
+      <text class="tip-text">{{blockedText}}</text>
+    </view>
+    <view class="btn-primary" bindtap="onCreateMine"><text>我也出一个挑战</text></view>
+    <view class="btn-ghost sub-btn" bindtap="onGoHome"><text>回首页</text></view>
+  </block>
+
+  <!-- ============ 答题中 ============ -->
+  <block wx:elif="{{mode === 'playing'}}">
+    <view class="topline">
+      <view class="dots">
+        <view
+          class="dot {{item.done ? 'done' : ''}} {{index === qi ? 'current' : ''}}"
+          wx:for="{{dots}}"
+          wx:key="id"
+        ></view>
+      </view>
+      <text class="q-index">第 {{qi + 1}}/{{total}} 题</text>
+    </view>
+
+    <!-- 舞台：白闪 / 闪电 / 形象 / 飘星。形象 = 孩子自己选的那只星星小人 -->
+    <view class="stage">
+      <view class="flash" wx:if="{{flashing}}"></view>
+      <text class="bolt" wx:if="{{figureHit}}">⚡</text>
+      <view class="figure-wrap {{figureDark ? 'dark' : ''}} {{figureHit ? 'hit' : ''}} {{figureHappy ? 'happy' : ''}}">
+        <view class="avatar-clip figure-clip">
+          <image
+            class="avatar-img"
+            src="../../assets/avatars.png"
+            mode="scaleToFill"
+            style="transform: translate({{av.tx}}%, {{av.ty}}%)"
+          />
+          <!-- 变黑用「滤镜 + 黑罩」双保险：老机型上滤镜万一不生效，罩子仍然把形象压黑，
+               不会出现「雷劈了但人没黑」这种静默失效 -->
+          <view class="darken" wx:if="{{figureDark}}"></view>
+        </view>
+      </view>
+      <text class="float-star" wx:if="{{floatStar}}">+1 ⭐</text>
+    </view>
+
+    <!-- 题干 -->
+    <view class="card quiz-card">
+      <text class="q-word">{{current.word}}</text>
+      <text class="q-phonetic">{{current.phonetic}}</text>
+      <text class="q-hint">{{challengerName}} 出的题 · 选出正确的中文意思</text>
+    </view>
+
+    <!-- 选项 -->
+    <view class="options">
+      <view
+        class="option {{pickedIdx === index ? (pickedCorrect ? 'right' : 'wrong') : ''}}"
+        wx:for="{{current.options}}"
+        wx:key="*this"
+        data-idx="{{index}}"
+        bindtap="onPickOption"
+      >
+        <text class="option-text">{{item}}</text>
+      </view>
+    </view>
+
+    <text class="foot-hint">答对一题得一颗星 ⭐</text>
+  </block>
+
+  <!-- ============ 结算 ============ -->
+  <block wx:else>
+    <view class="card result-card">
+      <text class="result-emoji">{{correctCount === total && total > 0 ? '🏆' : (correctCount > 0 ? '🎉' : '💪')}}</text>
+      <text class="result-title">答对 {{correctCount}}/{{total}} 题</text>
+
+      <!-- 对战双方：我 ↔ 出题者。用两边各自的形象，PK 才有「跟人比」的感觉 -->
+      <view class="vs-row">
+        <view class="vs-side">
+          <view class="avatar-clip vs-clip">
+            <image
+              class="avatar-img"
+              src="../../assets/avatars.png"
+              mode="scaleToFill"
+              style="transform: translate({{av.tx}}%, {{av.ty}}%)"
+            />
+          </view>
+          <text class="vs-name me">我</text>
+        </view>
+        <text class="vs-mid">VS</text>
+        <view class="vs-side">
+          <view class="avatar-clip vs-clip">
+            <image
+              class="avatar-img"
+              src="../../assets/avatars.png"
+              mode="scaleToFill"
+              style="transform: translate({{pkAv.tx}}%, {{pkAv.ty}}%)"
+            />
+          </view>
+          <text class="vs-name">{{challengerName}}</text>
+        </view>
+      </view>
+
+      <view class="result-stars" wx:if="{{earnedStars > 0}}">
+        <text class="result-stars-icon">⭐</text>
+        <text class="result-stars-text">获得 {{earnedStars}} 颗星</text>
+      </view>
+      <text class="result-sub" wx:else>这次没答对，下次一定行！</text>
+
+      <text class="result-sent" wx:if="{{sending}}">正在把成绩告诉 {{challengerName}}…</text>
+      <text class="result-sent ok" wx:elif="{{resultSent}}">成绩已告诉 {{challengerName}} ✅</text>
+      <text class="result-sent" wx:else>成绩会先记在本机，联网后再同步</text>
+    </view>
+
+    <!-- 错题回顾：答错时不揭晓，统一放到这里讲 -->
+    <view class="card wrong-card" wx:if="{{wrongList.length > 0}}">
+      <text class="wrong-title">📝 错题回顾</text>
+      <view class="wrong-item" wx:for="{{wrongList}}" wx:key="wordId">
+        <view class="wrong-info">
+          <text class="wrong-word">{{item.word}}</text>
+          <text class="wrong-phonetic">{{item.phonetic}}</text>
+        </view>
+        <text class="wrong-meaning">{{item.meaning}}</text>
+      </view>
+    </view>
+
+    <view class="btn-primary" wx:if="{{needLogin}}" bindtap="onLogin">
+      <text>微信登录，把成绩告诉对方</text>
+    </view>
+    <view class="btn-primary create-btn" wx:else bindtap="onCreateMine"><text>我也出一个挑战</text></view>
+    <view class="btn-ghost sub-btn" bindtap="onGoHome"><text>回首页</text></view>
+  </block>
+</view>

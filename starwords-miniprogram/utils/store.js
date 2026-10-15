@@ -1,5 +1,6 @@
 // 学习进度存储：本地 wx.storage 为准，登录后自动同步到云数据库
 const scheduler = require('./scheduler');
+const avatar = require('./avatar');
 const { cloud } = require('./cloud');
 
 const STORAGE_KEY = 'starwords-progress';
@@ -17,16 +18,39 @@ const DEFAULT_PROGRESS = {
   // 跟读攒下的星星总数（账户余额）。只增不减地累积，未来做「消耗活动」时从这里扣。
   // 每条 word 上的 stars 记录「该词已计入的星数」，用于去重（同一个词只记一次最好成绩）。
   stars: 0,
+  // PK 挑战的得星去重记录：存已结算过的挑战 id（每场 PK 只结算一次）。
+  // ⚠️ 不能复用 word.stars 那套去重 —— PK 答的是**别人**学过的词，我自己可能还没学，
+  //    强行建词条会把没学过的词标成 learned，污染学习进度。
+  pkRewarded: [],
+  // 孩子选的星星形象 id（见 utils/avatar.js）。'' = 还没选过，
+  // 此时 getAvatar() 会兜底成默认形象，hasAvatar() 为 false 以便再引导一次。
+  avatarId: '',
 };
+
+/** PK 去重记录的保留条数上限（云同步 payload 不能无限膨胀） */
+const MAX_PK_REWARDED = 100;
+
+/**
+ * 把存档 / 云端数据归一成可用形状。
+ * 每个字段都要能扛住脏数据：存档可能来自旧版本（缺字段），云端那份也可能被人手动改过。
+ * 只做「类型修复」，不动业务语义。
+ */
+function normalizeProgress(p) {
+  if (!Array.isArray(p.words)) p.words = [];
+  // 旧存档没有 pkRewarded；云端也可能被改成 null → 一律归一化成数组
+  if (!Array.isArray(p.pkRewarded)) p.pkRewarded = [];
+  // 形象 id：缺失 / null / 数字 / 不存在的 id 一律回落成「未选择」
+  // （由 hasAvatar() 判定；渲染走 getAvatar() 的兜底，不会空白）
+  if (typeof p.avatarId !== 'string' || !avatar.findById(p.avatarId)) p.avatarId = '';
+  return p;
+}
 
 function loadProgress() {
   try {
     const raw = wx.getStorageSync(STORAGE_KEY);
     if (!raw) return JSON.parse(JSON.stringify(DEFAULT_PROGRESS));
     const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    const merged = Object.assign({}, DEFAULT_PROGRESS, parsed);
-    if (!Array.isArray(merged.words)) merged.words = [];
-    return merged;
+    return normalizeProgress(Object.assign({}, DEFAULT_PROGRESS, parsed));
   } catch (e) {
     return JSON.parse(JSON.stringify(DEFAULT_PROGRESS));
   }
@@ -119,6 +143,60 @@ function creditStars(wordId, starCount) {
 /** 账户星星余额 */
 function getStarBalance() {
   return current.stars || 0;
+}
+
+/* ---------------- 星星形象（Avatar） ---------------- */
+
+/**
+ * 当前形象：一个可直接渲染的图块 { id, gender, name, col, row, tx, ty }。
+ * **永不返回空** —— 没设置过 / 存档脏数据 → 默认形象，页面照常显示。
+ */
+function getAvatar() {
+  return avatar.tileOf(current.avatarId);
+}
+
+/** 孩子是否真的选过形象。脏数据一律算「没选过」，好再引导一次 */
+function hasAvatar() {
+  return !!avatar.findById(current.avatarId);
+}
+
+/**
+ * 设置形象。**非法 id 一律不写入**（返回当前值），
+ * 免得脏数据把已经选好的形象冲掉。
+ * @returns {string} 归一后的形象 id
+ */
+function setAvatar(id) {
+  const item = avatar.findById(id);
+  if (!item) return getAvatar().id;
+  setProgress(Object.assign({}, current, { avatarId: item.id }));
+  return item.id;
+}
+
+/**
+ * PK 挑战得星：答对 1 题 = 1 颗星，**每场 PK 只结算一次**。
+ *
+ * 去重口径与 creditStars 不同（见 DEFAULT_PROGRESS.pkRewarded 的注释）：
+ * 这里按「挑战 id」去重，不碰 word 词条 —— 所以不会污染学习进度。
+ * 重复进入同一场 PK（重玩、退回再进）都只发一次星。
+ *
+ * @param {string} pkId  挑战 id
+ * @param {number} count 本场答对的题数（= 应得星数）
+ * @returns {number} 本次实际加到的星数（0 = 没加：重复结算 / 0 题 / id 非法）
+ */
+function creditPkStars(pkId, count) {
+  const id = typeof pkId === 'string' ? pkId : '';
+  const n = Math.floor(count || 0);
+  if (!id || n <= 0) return 0;
+  let gained = 0;
+  setProgress((prev) => {
+    const done = Array.isArray(prev.pkRewarded) ? prev.pkRewarded : [];
+    if (done.indexOf(id) !== -1) return prev; // 这场已经结算过 → 一分不给
+    let next = done.concat([id]);
+    if (next.length > MAX_PK_REWARDED) next = next.slice(next.length - MAX_PK_REWARDED);
+    gained = n;
+    return Object.assign({}, prev, { stars: (prev.stars || 0) + n, pkRewarded: next });
+  });
+  return gained;
 }
 
 function recordReviewResult(wordId, correct, date) {
@@ -251,7 +329,7 @@ function pullFromCloud() {
               ? Math.max.apply(null, current.words.map((w) => (w.lastAttemptAt ? new Date(w.lastAttemptAt).getTime() : 0)))
               : 0;
             if (remoteAt > localAt) {
-              current = Object.assign(JSON.parse(JSON.stringify(DEFAULT_PROGRESS)), remote);
+              current = normalizeProgress(Object.assign(JSON.parse(JSON.stringify(DEFAULT_PROGRESS)), remote));
               notify();
               return 'pulled';
             }
@@ -268,6 +346,10 @@ module.exports = {
   markWordLearned,
   creditStars,
   getStarBalance,
+  creditPkStars,
+  getAvatar,
+  hasAvatar,
+  setAvatar,
   recordReviewResult,
   completeDailySession,
   resetProgress,

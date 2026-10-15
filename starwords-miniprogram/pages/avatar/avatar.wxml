@@ -1,0 +1,67 @@
+<view class="page">
+  <!-- 顶部大预览：孩子一眼看到「这是我」 -->
+  <view class="card preview-card">
+    <view class="avatar-clip preview-clip" wx:if="{{preview}}">
+      <image
+        class="avatar-img"
+        src="../../assets/avatars.png"
+        mode="scaleToFill"
+        style="transform: translate({{preview.tx}}%, {{preview.ty}}%)"
+      />
+    </view>
+    <view class="preview-empty" wx:else><text class="preview-emoji">⭐</text></view>
+
+    <text class="preview-name" wx:if="{{preview}}">{{preview.name}}</text>
+    <text class="preview-name dim" wx:else>这是谁呢？</text>
+
+    <text class="preview-hint" wx:if="{{step === 'gender'}}">先告诉星星：你是男孩还是女孩？</text>
+    <text class="preview-hint" wx:elif="{{selectedId}}">喜欢就选它吧！</text>
+    <text class="preview-hint" wx:else>挑一个你最喜欢的星星</text>
+  </view>
+
+  <!-- 第 1 步：选性别 -->
+  <block wx:if="{{step === 'gender'}}">
+    <view class="gender-row">
+      <view class="gender-card" wx:for="{{genders}}" wx:key="id" data-id="{{item.id}}" bindtap="onPickGender">
+        <view class="avatar-clip gender-clip">
+          <image
+            class="avatar-img"
+            src="../../assets/avatars.png"
+            mode="scaleToFill"
+            style="transform: translate({{item.tx}}%, {{item.ty}}%)"
+          />
+        </view>
+        <text class="gender-name">{{item.name}}</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 第 2 步：从该性别的 6 个形象里挑 -->
+  <block wx:else>
+    <view class="grid">
+      <view
+        class="cell {{selectedId === item.id ? 'on' : ''}}"
+        wx:for="{{list}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onPickAvatar"
+      >
+        <view class="avatar-clip cell-clip">
+          <image
+            class="avatar-img"
+            src="../../assets/avatars.png"
+            mode="scaleToFill"
+            style="transform: translate({{item.tx}}%, {{item.ty}}%)"
+          />
+        </view>
+        <text class="cell-name">{{item.name}}</text>
+      </view>
+    </view>
+    <view class="back-row" bindtap="onBackGender"><text class="back-text">← 换性别</text></view>
+  </block>
+
+  <view class="btn-primary {{selectedId ? '' : 'disabled'}}" bindtap="onConfirm">
+    <text>就选它啦</text>
+  </view>
+  <text class="foot-note">形象会出现在 PK 答题和结算里，随时可以回来换哦</text>
+</view>

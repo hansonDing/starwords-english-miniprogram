@@ -6,7 +6,10 @@
     "pages/progress/progress",
     "pages/mine/mine",
     "pages/video/video",
-    "pages/admin/admin"
+    "pages/admin/admin",
+    "pages/pk-create/pk-create",
+    "pages/pk-play/pk-play",
+    "pages/avatar/avatar"
   ],
   "window": {
     "navigationBarBackgroundColor": "#6D59EB",

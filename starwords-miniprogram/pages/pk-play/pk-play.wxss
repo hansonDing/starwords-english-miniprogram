@@ -1,0 +1,463 @@
+.page {
+  padding: 12rpx 24rpx 60rpx;
+}
+
+.sub-btn {
+  margin-top: 20rpx;
+}
+
+.foot-hint {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #9ca3af;
+  text-align: center;
+}
+
+/* ---------- 加载 / 不能作答 ---------- */
+.tip-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 32rpx;
+  margin-bottom: 32rpx;
+}
+
+.tip-emoji {
+  font-size: 96rpx;
+}
+
+.tip-title {
+  margin-top: 24rpx;
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #1f2937;
+  text-align: center;
+}
+
+.tip-text {
+  margin-top: 16rpx;
+  font-size: 26rpx;
+  color: #6b7280;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ---------- 进度点 ---------- */
+.topline {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 12rpx 20rpx;
+}
+
+.dots {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.dot {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  background: #e5e7eb;
+  margin-right: 14rpx;
+}
+
+.dot.done {
+  background: #6d59eb;
+}
+
+.dot.current {
+  background: #c4b5fd;
+  transform: scale(1.35);
+}
+
+.q-index {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #6d59eb;
+}
+
+/* ---------- 舞台：星星形象 ---------- */
+.stage {
+  position: relative;
+  height: 280rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* 孩子自己选的星星形象（精灵图取格子，取图规则见 app.wxss 的 .avatar-clip） */
+.figure-wrap {
+  position: relative;
+  width: 240rpx;
+  height: 240rpx;
+}
+
+.figure-clip {
+  width: 100%;
+  height: 100%;
+}
+
+/* 被雷劈黑：滤镜 + 半透明黑罩（见 .darken）双保险。
+   只写滤镜不行 —— 少数老机型/内核不认 filter，那就成了「雷劈了但人没黑」的静默失效。 */
+.figure-wrap.dark .avatar-img {
+  filter: brightness(0.3) saturate(0);
+}
+
+.darken {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(17, 24, 39, 0.5);
+}
+
+/* 答对：跳一下 */
+.figure-wrap.happy {
+  animation: pk-jump 0.65s ease-out;
+}
+
+@keyframes pk-jump {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    transform: translateY(-42rpx) scale(1.08);
+  }
+  70% {
+    transform: translateY(0) scale(0.95);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 答错：猛抖 */
+.figure-wrap.hit {
+  animation: pk-shake 0.55s ease-in-out;
+}
+
+@keyframes pk-shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+  15% {
+    transform: translateX(-16rpx) rotate(-6deg);
+  }
+  30% {
+    transform: translateX(16rpx) rotate(6deg);
+  }
+  45% {
+    transform: translateX(-12rpx) rotate(-5deg);
+  }
+  60% {
+    transform: translateX(12rpx) rotate(5deg);
+  }
+  80% {
+    transform: translateX(-6rpx) rotate(-2deg);
+  }
+}
+
+/* 闪电：从头顶劈下来 */
+.bolt {
+  position: absolute;
+  top: 0;
+  font-size: 96rpx;
+  line-height: 1;
+  animation: pk-strike 0.55s ease-in forwards;
+}
+
+@keyframes pk-strike {
+  0% {
+    transform: translateY(-140rpx) scale(0.5);
+    opacity: 0;
+  }
+  30% {
+    transform: translateY(24rpx) scale(1.25);
+    opacity: 1;
+  }
+  60% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+}
+
+/* 全屏白闪 */
+.flash {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  z-index: 99;
+  animation: pk-flash 0.45s ease-out forwards;
+}
+
+@keyframes pk-flash {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.82;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* 答对飘星 */
+.float-star {
+  position: absolute;
+  top: 20rpx;
+  font-size: 44rpx;
+  font-weight: 800;
+  color: #f59e0b;
+  animation: pk-float 0.95s ease-out forwards;
+}
+
+@keyframes pk-float {
+  0% {
+    transform: translateY(20rpx);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-110rpx);
+    opacity: 0;
+  }
+}
+
+/* ---------- 题干 ---------- */
+.quiz-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 36rpx 32rpx;
+  margin: 20rpx 0 8rpx;
+}
+
+.q-word {
+  font-size: 64rpx;
+  font-weight: 800;
+  color: #1f2937;
+  letter-spacing: 1rpx;
+}
+
+.q-phonetic {
+  margin-top: 10rpx;
+  font-size: 28rpx;
+  color: #9ca3af;
+}
+
+.q-hint {
+  margin-top: 20rpx;
+  font-size: 24rpx;
+  color: #6b7280;
+}
+
+/* ---------- 选项 ---------- */
+.options {
+  display: flex;
+  flex-direction: column;
+  margin-top: 20rpx;
+}
+
+.option {
+  background: #ffffff;
+  border: 3rpx solid #e5e7eb;
+  border-radius: 28rpx;
+  padding: 28rpx 32rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(109, 89, 235, 0.06);
+}
+
+.option.right {
+  background: #ecfdf5;
+  border-color: #34d399;
+}
+
+.option.wrong {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+.option-text {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.option.right .option-text {
+  color: #047857;
+}
+
+.option.wrong .option-text {
+  color: #b91c1c;
+}
+
+/* ---------- 结算 ---------- */
+.result-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 56rpx 32rpx;
+  margin-top: 32rpx;
+}
+
+.result-emoji {
+  font-size: 110rpx;
+}
+
+.result-title {
+  margin-top: 20rpx;
+  font-size: 44rpx;
+  font-weight: 800;
+  color: #1f2937;
+}
+
+/* ---------- 结算：对战双方 ---------- */
+.vs-row {
+  margin-top: 28rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.vs-side {
+  width: 200rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.vs-clip {
+  width: 150rpx;
+  height: 150rpx;
+}
+
+.vs-name {
+  margin-top: 8rpx;
+  max-width: 200rpx;
+  font-size: 24rpx;
+  color: #6b7280;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.vs-name.me {
+  color: #6d59eb;
+  font-weight: 700;
+}
+
+.vs-mid {
+  margin: 0 12rpx;
+  font-size: 40rpx;
+  font-weight: 800;
+  color: #c4b5fd;
+}
+
+.result-stars {
+  margin-top: 24rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  background: #fffbeb;
+  border-radius: 40rpx;
+  padding: 14rpx 36rpx;
+}
+
+.result-stars-icon {
+  font-size: 36rpx;
+}
+
+.result-stars-text {
+  margin-left: 12rpx;
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #b45309;
+}
+
+.result-sub {
+  margin-top: 24rpx;
+  font-size: 28rpx;
+  color: #6b7280;
+}
+
+.result-sent {
+  margin-top: 26rpx;
+  font-size: 25rpx;
+  color: #9ca3af;
+}
+
+.result-sent.ok {
+  color: #059669;
+  font-weight: 700;
+}
+
+/* ---------- 错题回顾 ---------- */
+.wrong-card {
+  margin-top: 24rpx;
+}
+
+.wrong-title {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #1f2937;
+}
+
+.wrong-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 0;
+  border-bottom: 2rpx solid #f3f4f6;
+}
+
+.wrong-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.wrong-word {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+.wrong-phonetic {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: #9ca3af;
+}
+
+.wrong-meaning {
+  flex: 0 0 auto;
+  margin-left: 16rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.create-btn {
+  margin-top: 36rpx;
+}

@@ -104,13 +104,24 @@ console.log('[3] app.js 的 Page 包装器机制');
   );
 }
 
-console.log('[4] 七个页面文件都在顶层调用 Page()');
+console.log('[4] 所有页面文件都在顶层调用 Page()');
 {
   const pageRoot = path.join(ROOT, 'pages');
   const dirs = fs.readdirSync(pageRoot).filter(function (d) {
     return fs.existsSync(path.join(pageRoot, d, d + '.js'));
   });
-  check(dirs.length === 7, '找到 7 个页面（实际 ' + dirs.length + '）');
+  // 页面数从 app.json 的 pages 动态取 —— 新增页面时不必改这里，
+  // 而且能反向抓出「目录里有页面但忘了注册到 app.json」（注册漏了 = 真机打不开）
+  const appJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'app.json'), 'utf8'));
+  const registered = Array.isArray(appJson.pages) ? appJson.pages : [];
+  const missingDirs = registered.filter(function (p) {
+    return !fs.existsSync(path.join(ROOT, p + '.js'));
+  });
+  check(
+    dirs.length === registered.length && missingDirs.length === 0,
+    '页面目录数（' + dirs.length + '）与 app.json 注册数（' + registered.length + '）一致' +
+      (missingDirs.length ? '；这些注册页没有文件：' + missingDirs.join(', ') : '')
+  );
   const missing = dirs.filter(function (d) {
     const src = fs.readFileSync(path.join(pageRoot, d, d + '.js'), 'utf8');
     return !/(^|\n)\s*Page\s*\(/.test(src);

@@ -1,0 +1,82 @@
+<view class="page">
+  <!-- ============ ① 选题 ============ -->
+  <block wx:if="{{mode === 'pick'}}">
+    <view class="card head-card">
+      <text class="head-title">{{headTitle}}</text>
+      <text class="head-sub" wx:if="{{targetName}}">挑几个单词考考他：答对一题得一颗星</text>
+      <text class="head-sub" wx:else>用我学过的单词出题，分享给小伙伴来答</text>
+    </view>
+
+    <!-- 学过的词不够 -->
+    <view class="card empty-card" wx:if="{{candidates.length < minQuestions}}">
+      <text class="empty-emoji">📚</text>
+      <text class="empty-title">还没有足够的单词可以出题</text>
+      <text class="empty-text">先去学 {{minQuestions}} 个单词，就能给小伙伴出题啦</text>
+      <view class="btn-primary empty-btn" bindtap="onGoLearn"><text>去学习</text></view>
+    </view>
+
+    <block wx:else>
+      <view class="card pick-card">
+        <view class="pick-head">
+          <text class="pick-count">已选 {{pickedCount}}/{{maxQuestions}}</text>
+          <view class="pick-actions">
+            <text class="pick-action" bindtap="onSelectAll">全选</text>
+            <text class="pick-action" bindtap="onClearAll">清空</text>
+          </view>
+        </view>
+        <view class="pick-list">
+          <view
+            class="pick-item {{item.picked ? 'on' : ''}}"
+            wx:for="{{candidates}}"
+            wx:key="id"
+            data-id="{{item.id}}"
+            bindtap="onToggle"
+          >
+            <view class="tick">{{item.picked ? '✓' : ''}}</view>
+            <view class="pick-info">
+              <text class="pick-word">{{item.word}}</text>
+              <text class="pick-phonetic">{{item.phonetic}}</text>
+            </view>
+            <text class="pick-meaning">{{item.meaning}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="btn-primary {{canCreate ? '' : 'disabled'}}" bindtap="onCreate">
+        <text>{{creating ? '正在生成…' : '生成挑战'}}</text>
+      </view>
+      <text class="foot-hint" wx:if="{{!canCreate}}">至少选 {{minQuestions}} 个单词</text>
+      <text class="foot-hint" wx:else>生成后转发给小伙伴，他点开就能答题</text>
+    </block>
+  </block>
+
+  <!-- ============ ② 已生成，待分享 ============ -->
+  <block wx:elif="{{mode === 'ready'}}">
+    <view class="card ready-card">
+      <text class="ready-emoji">⚔️</text>
+      <text class="ready-title">挑战已生成！</text>
+      <text class="ready-sub">一共 {{questionCount}} 道题</text>
+      <view class="ready-flow">
+        <text class="ready-step">① 点下面的按钮</text>
+        <text class="ready-step">② 在微信里选小伙伴或群，发出去</text>
+        <text class="ready-step">③ 他点开卡片就能答题</text>
+      </view>
+      <text class="ready-warn">⚠️ 转发给他，他点开才能作答</text>
+    </view>
+
+    <button class="share-btn" open-type="share"><text>转发给他，开始 PK</text></button>
+    <view class="btn-ghost sub-btn" bindtap="onBackToPick"><text>换个题目</text></view>
+    <text class="foot-hint">他答完之后，可以在「我的」页看到成绩</text>
+  </block>
+
+  <!-- ============ ③ 失败 ============ -->
+  <block wx:else>
+    <view class="card fail-card">
+      <text class="fail-emoji">😿</text>
+      <text class="fail-title">没能生成挑战</text>
+      <text class="fail-text">{{failText}}</text>
+    </view>
+    <view class="btn-primary" bindtap="onGoMine"><text>去「我的」页登录</text></view>
+    <view class="btn-ghost sub-btn" bindtap="onBackToPick"><text>返回重试</text></view>
+  </block>
+</view>

@@ -40,6 +40,7 @@ function check(cond, msg) {
 const STORE_PATH = path.join(ROOT, 'utils', 'store.js');
 const STORE_SRC = fs.readFileSync(STORE_PATH, 'utf8');
 const realScheduler = loadCjs(path.join(ROOT, 'utils', 'scheduler.js'));
+const realAvatar = loadCjs(path.join(ROOT, 'utils', 'avatar.js'));
 
 /**
  * 用同一份内存 storage 造一个 store 实例。
@@ -61,6 +62,7 @@ function makeStore(storage) {
     exports: mod.exports,
     require: function (id) {
       if (id === './scheduler') return realScheduler;
+      if (id === './avatar') return realAvatar;
       // cloud 桩掉：store 会退化成纯本地（getSession 直接 resolve(null)）
       if (id === './cloud') return { cloud: null, cloudError: '', available: false };
       throw new Error('stars-check: 未预期的 require → ' + id);
@@ -154,6 +156,89 @@ check(store2.getStarBalance() === 6, '复习不影响账户余额');
 console.log('[7] 重置进度');
 store2.resetProgress();
 check(store2.getStarBalance() === 0, 'resetProgress() 后余额归 0');
+
+/* ---------- 8. PK 星星账本（creditPkStars） ---------- */
+// PK 星星和跟读星星进的是**同一个**账户余额（progress.stars），
+// 但去重口径不同：跟读按「每个词只记一次最好成绩」，PK 按「每场 PK 只结算一次」。
+// 为什么不能用跟读那套：PK 答的是**别人**学过的词，我自己可能还没学，
+// 强行建词条会把没学过的词标成 learned，污染学习进度。
+console.log('[8] PK 星星账本（同一余额，按场次去重）');
+// 接口缺失时后续用例用短路保护，避免整个脚本崩在第 9 节只留一个 TypeError
+const hasPk = typeof store2.creditPkStars === 'function';
+if (!hasPk) {
+  check(false, 'store 未导出 creditPkStars（PK 得星入口）');
+} else {
+  check(store2.creditPkStars('pkA', 3) === 3, '答对 3 题 → 得 3 星');
+  check(store2.getStarBalance() === 3, '余额 = 3');
+  check(store2.creditPkStars('pkA', 3) === 0, '同一场 PK 再进一次 → 0 星（防刷）');
+  check(store2.creditPkStars('pkA', 5) === 0, '同一场 PK 答得更「好」也是 0 星（一场只结算一次）');
+  check(store2.getStarBalance() === 3, '余额仍是 3');
+  check(store2.creditPkStars('pkB', 2) === 2, '换一场 PK → 正常得 2 星');
+  check(store2.getStarBalance() === 5, '余额 = 5（PK 星与跟读星同一个池子）');
+  check(store2.creditPkStars('pkC', 0) === 0, '全错（0 星）→ 不加星');
+  check(store2.getStarBalance() === 5, '余额仍是 5');
+  check(store2.creditPkStars('pkD', -3) === 0, '负数星被夹到 0，不会倒扣余额');
+  check(store2.getStarBalance() === 5, '余额仍是 5');
+  check(store2.creditPkStars('', 3) === 0, '空 pkId → 不加星（防绕过账本）');
+  check(store2.creditPkStars(null, 3) === 0, 'null pkId → 不加星');
+  check(store2.getStarBalance() === 5, '余额仍是 5');
+}
+
+/* ---------- 9. PK 去重记录的持久化 ---------- */
+console.log('[9] PK 去重记录要能持久化');
+{
+  const store3 = makeStore(storage);
+  check(store3.getStarBalance() === 5, '重启后读回余额 5');
+  check(hasPk && store3.creditPkStars('pkA', 3) === 0, '重启后同一场 PK 依然不重复发星（去重记录已落盘）');
+  check(hasPk && store3.creditPkStars('pkE', 1) === 1, '重启后新 PK 正常发星');
+  check(!hasPk || store3.getStarBalance() === 6, '余额 = 6');
+}
+
+/* ---------- 10. 旧存档（无 pkRewarded 字段）不能崩 ---------- */
+console.log('[10] 旧存档兼容');
+{
+  const legacy = {};
+  legacy['starwords-progress'] = JSON.stringify({
+    progressVersion: 2,
+    currentWeek: 1,
+    words: [],
+    streakDays: 0,
+    achievements: [],
+    stars: 7,
+  });
+  const store4 = makeStore(legacy);
+  check(store4.getStarBalance() === 7, '旧存档余额保留为 7');
+  check(Array.isArray(store4.getProgress().pkRewarded), '缺失的 pkRewarded 被补成空数组');
+  check(hasPk && store4.creditPkStars('pkX', 2) === 2, '旧存档（字段缺失）也能正常计星');
+  check(!hasPk || store4.getStarBalance() === 9, '余额 = 9');
+  check(hasPk && store4.creditPkStars('pkX', 2) === 0, '旧存档升级后依然去重');
+
+  // 值被写坏（云端脏数据 / 手动改过存档）
+  const broken = {};
+  broken['starwords-progress'] = JSON.stringify({
+    progressVersion: 2,
+    words: [],
+    stars: 1,
+    pkRewarded: null,
+  });
+  const store6 = makeStore(broken);
+  check(hasPk && store6.creditPkStars('pkY', 2) === 2, 'pkRewarded 被写成 null 时仍能计星（归一化兜底）');
+  check(!hasPk || store6.getStarBalance() === 3, '余额 = 3');
+}
+
+/* ---------- 11. 去重记录不会无限膨胀 ---------- */
+console.log('[11] pkRewarded 上限（云同步 payload 不能无限增长）');
+{
+  const store5 = makeStore({});
+  if (hasPk) {
+    for (let i = 0; i < 105; i++) store5.creditPkStars('pkk' + i, 1);
+  }
+  const kept = store5.getProgress().pkRewarded || [];
+  check(hasPk && kept.length === 100, '只保留最近 100 条（实际 ' + kept.length + '）');
+  check(hasPk && kept.indexOf('pkk104') !== -1, '最新一场还在记录里');
+  check(hasPk && kept.indexOf('pkk0') === -1, '最旧一场已被裁掉');
+  check(hasPk && store5.getStarBalance() === 105, '余额是完整的 105（裁剪记录不影响已发的星）');
+}
 
 console.log(failed ? '\n星星账户自检失败：' + failed + ' 项 ✗' : '\n星星账户自检全部通过 ✓');
 process.exit(failed ? 1 : 0);

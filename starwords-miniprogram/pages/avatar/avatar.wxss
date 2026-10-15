@@ -1,0 +1,146 @@
+.page {
+  padding: 12rpx 24rpx 60rpx;
+}
+
+/* ---------- 顶部预览 ---------- */
+.preview-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 36rpx 32rpx 32rpx;
+}
+
+.preview-clip {
+  width: 300rpx;
+  height: 300rpx;
+}
+
+.preview-empty {
+  width: 300rpx;
+  height: 300rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f3ff;
+  border-radius: 50%;
+}
+
+.preview-emoji {
+  font-size: 120rpx;
+  opacity: 0.45;
+}
+
+.preview-name {
+  margin-top: 20rpx;
+  font-size: 40rpx;
+  font-weight: 800;
+  color: #1f2937;
+}
+
+.preview-name.dim {
+  color: #9ca3af;
+}
+
+.preview-hint {
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* ---------- 第 1 步：性别 ---------- */
+.gender-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-top: 28rpx;
+}
+
+.gender-card {
+  width: 48%;
+  background: #ffffff;
+  border-radius: 32rpx;
+  box-shadow: 0 8rpx 32rpx rgba(109, 89, 235, 0.1);
+  padding: 28rpx 20rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gender-clip {
+  width: 220rpx;
+  height: 220rpx;
+}
+
+.gender-name {
+  margin-top: 16rpx;
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #6d59eb;
+}
+
+/* ---------- 第 2 步：6 格网格 ---------- */
+.grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-top: 28rpx;
+}
+
+.cell {
+  width: 32%;
+  margin-bottom: 20rpx;
+  background: #ffffff;
+  border: 4rpx solid #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 6rpx 20rpx rgba(109, 89, 235, 0.08);
+  padding: 12rpx 8rpx 16rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 选中：紫色描边 + 轻微放大，孩子一眼看出选了哪个 */
+.cell.on {
+  border-color: #6d59eb;
+  background: #f5f3ff;
+  transform: scale(1.04);
+}
+
+.cell-clip {
+  width: 100%;
+  height: 190rpx;
+}
+
+.cell-name {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #6b7280;
+}
+
+.cell.on .cell-name {
+  color: #6d59eb;
+  font-weight: 700;
+}
+
+.back-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  padding: 8rpx 0 4rpx;
+}
+
+.back-text {
+  font-size: 26rpx;
+  color: #6d59eb;
+}
+
+/* ---------- 底部 ---------- */
+.foot-note {
+  display: block;
+  margin-top: 24rpx;
+  font-size: 24rpx;
+  color: #9ca3af;
+  text-align: center;
+}

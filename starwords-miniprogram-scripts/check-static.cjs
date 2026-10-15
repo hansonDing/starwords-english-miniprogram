@@ -570,6 +570,223 @@ console.log('[4k] 复习错题本与记录分页');
   }
 }
 
+/* ---------- 4l. PK 挑战（发起 → 分享 → 作答 → 本地入账 → 回传）----------
+   这里锁两处**静默坏掉**的地方（界面都正常，只是功能不生效或白丢东西）：
+     ① 结算顺序 —— store.creditPkStars 必须在 pkCloud.submitResult **之前**。
+        反过来的话网络一挂，孩子明明答完了却拿不到星星（而界面照样显示成绩）。
+     ② 分享时机 —— <button open-type="share"> 必须在拿到 pkId 之后才渲染，
+        否则 onShareAppMessage 拼出的 path 是 `/pages/pk-play/pk-play?id=`，
+        对方点开直接「挑战不存在」。
+   行为验证另跑 `node pk-check.cjs` 与 `node pk-runtime-check.cjs`。 */
+console.log('[4l] PK 挑战');
+{
+  const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
+  const pkSrc = read('utils/pk.js');
+  const cloudSrc = read('utils/pkCloud.js');
+  const storeSrc = read('utils/store.js');
+  const createSrc = read('pages/pk-create/pk-create.js');
+  const createWxml = read('pages/pk-create/pk-create.wxml');
+  const playSrc = read('pages/pk-play/pk-play.js');
+  const playWxml = read('pages/pk-play/pk-play.wxml');
+  const mineSrc = read('pages/mine/mine.js');
+  const mineWxml = read('pages/mine/mine.wxml');
+
+  const missingPk = ['buildQuestions', 'scoreQuiz', 'makeChallengeId', 'isPlayable'].filter(
+    (n) => pkSrc.indexOf(n) === -1
+  );
+  const missingCloud = ['function create', 'function fetch', 'function submitResult', 'function listMine'].filter(
+    (n) => cloudSrc.indexOf(n) === -1
+  );
+  // ⚠️ 顺序检查必须只看 finish() **方法体内部**：
+  //    `pkCloud.submitResult(` 在 submitResult() 的方法定义里也出现一次，而那个定义
+  //    永远排在 finish() 之后 —— 拿全文件的首次命中去比较的话，
+  //    「把本地入账挪到回传之后」这个变异根本不会被发现（变异测试实测过）。
+  const finStart = playSrc.indexOf('finish() {');
+  let finEnd = finStart === -1 ? 0 : playSrc.indexOf('\n  },', finStart);
+  if (finEnd === -1) finEnd = playSrc.length;
+  const finBody = finStart === -1 ? '' : playSrc.slice(finStart, finEnd);
+  const ci = finBody.search(/store\s*\.\s*creditPkStars\s*\(/);
+  const si = finBody.search(/this\s*\.\s*submitResult\s*\(/);
+
+  // 老 iOS 引擎解析不了的语法（与工程硬约束一致）
+  const badSyntax = [];
+  for (const f of ['utils/pk.js', 'utils/pkCloud.js', 'pages/pk-create/pk-create.js', 'pages/pk-play/pk-play.js']) {
+    const src = read(f);
+    if (/\?\./.test(src)) badSyntax.push(f + ' 用了可选链 ?.');
+    if (/globalThis/.test(src)) badSyntax.push(f + ' 用了裸 globalThis');
+    if (/\{\s*\.\.\./.test(src) || /\[\s*\.\.\./.test(src)) badSyntax.push(f + ' 用了展开语法');
+  }
+
+  if (missingPk.length) {
+    fail('utils/pk.js 缺少：' + missingPk.join(' / '));
+  } else if (missingCloud.length) {
+    fail('utils/pkCloud.js 缺少：' + missingCloud.join(' / '));
+  } else if (!/pkRewarded/.test(storeSrc) || storeSrc.indexOf('creditPkStars,') === -1) {
+    fail('store.js 缺少 pkRewarded / creditPkStars（PK 星星账本与「每场只结算一次」防刷）');
+  } else if (app.pages.indexOf('pages/pk-create/pk-create') === -1 || app.pages.indexOf('pages/pk-play/pk-play') === -1) {
+    fail('app.json 未注册 pk-create / pk-play 页面');
+  } else if (createWxml.indexOf('open-type="share"') === -1) {
+    fail('pk-create.wxml 缺少 <button open-type="share">（没有它转发面板根本拉不起来）');
+  } else if (!/onShareAppMessage\s*\(/.test(createSrc) || createSrc.indexOf("'/pages/pk-play/pk-play?id='") === -1) {
+    fail("pk-create.js 的 onShareAppMessage 未把 path 指向 pk-play?id=<pkId>");
+  } else if (!/mode:\s*'ready'/.test(createSrc) || !/wx:elif="\{\{mode === 'ready'\}\}"/.test(createWxml)) {
+    fail('pk-create 缺少「先写云端拿到 pkId，再显示分享按钮」的状态机');
+  } else if (playWxml.indexOf('bolt') === -1 || playWxml.indexOf('dark') === -1) {
+    fail('pk-play.wxml 缺少答错反馈（闪电 bolt / 小人变黑 dark）');
+  } else if (ci === -1 || si === -1) {
+    fail('pk-play.js 的 finish() 未接入结算（缺少 store.creditPkStars 或 this.submitResult）');
+  } else if (ci > si) {
+    fail('pk-play.js 结算顺序反了：必须先 creditPkStars（本地入账）再 submitResult（回传）—— 否则断网时孩子答完拿不到星星');
+  } else if (playSrc.indexOf('clearTimeout(this.answerTimer)') === -1) {
+    fail('pk-play.js 未在 onUnload 清理 answerTimer（卸载后 setData 会报错）');
+  } else if (mineWxml.indexOf('onChallenge') === -1 || mineSrc.indexOf('onChallenge') === -1) {
+    fail('mine 页缺少「挑战」入口（排行榜 → 发起 PK）');
+  } else if (mineWxml.indexOf('pkList') === -1 || mineSrc.indexOf('listMine') === -1) {
+    fail('mine 页未展示「我发起的 PK」结果列表');
+  } else if (badSyntax.length) {
+    fail('PK 相关文件含老引擎无法解析的语法：' + badSyntax.join('；'));
+  } else {
+    pass('PK 接线正确（出题 → 分享 → 作答 → 本地入账 → 回传，且分享时机正确）');
+  }
+}
+
+/* ---------- 4m. 星星形象（Avatar）----------
+   锁四处**静默坏掉**的地方（界面全正常，只是形象错位 / 不显示 / 不变黑）：
+     ① 精灵图常量三处必须一致：utils/avatar.js 的 SPRITE、gen-avatars.py、app.wxss 的 600%/200%。
+        只改一处 → 真机上形象错位成「别的形象的边角」，零报错。
+     ② 代码里的 LIST 必须与生成器写出的 avatar-map.json 逐条一致
+        → 否则「选了蝴蝶结显示成花环」。
+     ③ <image src> 必须写死字面量 → 平台预览只复制字面量引用的资源，用 {{}} 绑定必 404。
+     ④ 变黑必须「滤镜 + 黑罩」双保险 → 只写 filter 的机型会静默失效（雷劈了人没黑）。
+   另外：PNG 实际尺寸必须等于 cols*cell × rows*cell（读文件头，不是猜的）。
+   行为验证另跑 `node avatar-check.cjs` 与 `node avatar-runtime-check.cjs`。 */
+console.log('[4m] 星星形象');
+{
+  const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
+  const has = (p) => fs.existsSync(path.join(root, p));
+  const avatarSrc = has('utils/avatar.js') ? read('utils/avatar.js') : '';
+  const appWxss = read('app.wxss');
+  const storeSrc = read('utils/store.js');
+  const playSrc = read('pages/pk-play/pk-play.js');
+  const playWxml = read('pages/pk-play/pk-play.wxml');
+  const playWxss = read('pages/pk-play/pk-play.wxss');
+  const mineSrc = read('pages/mine/mine.js');
+  const mineWxml = read('pages/mine/mine.wxml');
+  const createSrc = read('pages/pk-create/pk-create.js');
+  const cloudSrc = read('utils/pkCloud.js');
+  const pageFiles = ['pages/avatar/avatar.js', 'pages/avatar/avatar.json', 'pages/avatar/avatar.wxml', 'pages/avatar/avatar.wxss'];
+  const missingFiles = pageFiles.filter((p) => !has(p));
+
+  const missingApi = ['SPRITE', 'LIST', 'GENDERS', 'DEFAULT_ID', 'findById', 'listByGender', 'normalizeId', 'tileOf', 'defaultTile'].filter(
+    (n) => avatarSrc.indexOf(n) === -1
+  );
+
+  // 精灵图真实尺寸（PNG 的 IHDR：宽高在偏移 16 / 20，大端 32 位）
+  let real = null;
+  try {
+    const buf = fs.readFileSync(path.join(root, 'assets/avatars.png'));
+    real = { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+  } catch (e) {
+    real = null;
+  }
+
+  // 生成器写出的落位表 = 代码与美术之间的「合约」
+  let map = null;
+  try {
+    map = JSON.parse(fs.readFileSync(path.join(__dirname, 'avatar-map.json'), 'utf8'));
+  } catch (e) {
+    map = null;
+  }
+  const mapIds = map && Array.isArray(map.list) ? map.list.map((x) => x.id) : [];
+  const srcIds = (avatarSrc.match(/id: '((?:boy|girl)-\d+)'/g) || []).map((s) => s.replace(/[^']*'([^']+)'.*/, '$1'));
+
+  // 取图常量（SPRITE）
+  const sp = avatarSrc.match(/cols:\s*(\d+),\s*rows:\s*(\d+),\s*cell:\s*(\d+)/);
+  const sprite = sp ? { cols: Number(sp[1]), rows: Number(sp[2]), cell: Number(sp[3]) } : null;
+
+  // 生成器那份常量
+  let pySrc = '';
+  try {
+    pySrc = fs.readFileSync(path.join(__dirname, 'gen-avatars.py'), 'utf8');
+  } catch (e) {
+    pySrc = '';
+  }
+  const pySp = pySrc.match(/CELL = (\d+)\s*\nCOLS = (\d+)\s*\nROWS = (\d+)/);
+  const pySprite = pySp ? { cell: Number(pySp[1]), cols: Number(pySp[2]), rows: Number(pySp[3]) } : null;
+
+  // app.wxss 的裁切容器与放大倍数
+  const clipOk = /\.avatar-clip\s*\{[^}]*overflow:\s*hidden/.test(appWxss);
+  const imgOk =
+    /\.avatar-img\s*\{[^}]*width:\s*600%/.test(appWxss) && /\.avatar-img\s*\{[^}]*height:\s*200%/.test(appWxss);
+
+  // ⚠️ 页面预览只复制**字面量**引用的资源：wxml 里出现几次 avatars.png，
+  //    就必须有几个写成 src="../../assets/avatars.png"（用 {{}} 绑定的必 404）
+  const wxmlAll = ['pages/avatar/avatar.wxml', 'pages/pk-play/pk-play.wxml', 'pages/mine/mine.wxml']
+    .filter((p) => has(p))
+    .map((p) => read(p))
+    .join('\n');
+  const pngMentions = (wxmlAll.match(/avatars\.png/g) || []).length;
+  const pngLiterals = (wxmlAll.match(/src="\.\.\/\.\.\/assets\/avatars\.png"/g) || []).length;
+
+  // 老 iOS 引擎解析不了的语法（与工程硬约束一致）
+  const badSyntax = [];
+  for (const f of ['utils/avatar.js', 'pages/avatar/avatar.js']) {
+    if (!has(f)) continue;
+    const src = read(f);
+    if (/\?\./.test(src)) badSyntax.push(f + ' 用了可选链 ?.');
+    if (/globalThis/.test(src)) badSyntax.push(f + ' 用了裸 globalThis');
+    if (/\{\s*\.\.\./.test(src) || /\[\s*\.\.\./.test(src)) badSyntax.push(f + ' 用了展开语法');
+  }
+
+  if (missingFiles.length) {
+    fail('形象页四件套缺文件：' + missingFiles.join(' / ') + '（缺 .json 会让真机白屏）');
+  } else if (missingApi.length) {
+    fail('utils/avatar.js 缺少：' + missingApi.join(' / '));
+  } else if (!sprite) {
+    fail('utils/avatar.js 的 SPRITE 常量解析不出来（格式应为 cols: 6, rows: 2, cell: 192）');
+  } else if (!real) {
+    fail('assets/avatars.png 不存在或读不出尺寸（形象图必须随包发布）');
+  } else if (real.width !== sprite.cols * sprite.cell || real.height !== sprite.rows * sprite.cell) {
+    fail(
+      'avatars.png 实际尺寸 ' + real.width + '×' + real.height + ' 与 SPRITE(' + sprite.cols + '×' + sprite.rows + ' 格 @' + sprite.cell + 'px) 不符 —— 取图会整体错位'
+    );
+  } else if (!pySprite || pySprite.cols !== sprite.cols || pySprite.rows !== sprite.rows || pySprite.cell !== sprite.cell) {
+    fail('gen-avatars.py 的 COLS/ROWS/CELL 与 utils/avatar.js 的 SPRITE 不一致（两张图会长得不一样）');
+  } else if (!clipOk || !imgOk) {
+    fail('app.wxss 缺少 .avatar-clip{overflow:hidden} 或 .avatar-img 的 600%/200%（取图会错位）');
+  } else if (!map || mapIds.length !== 12) {
+    fail('avatar-map.json 缺失或不是 12 个形象（生成器产出，代码靠它对齐落位）');
+  } else if (srcIds.join(',') !== mapIds.join(',')) {
+    fail('utils/avatar.js 的 LIST 与 avatar-map.json 不一致：代码 ' + srcIds.join(',') + ' / 美术 ' + mapIds.join(','));
+  } else if (pngMentions !== pngLiterals || pngLiterals < 6) {
+    fail(
+      'wxml 里的 avatars.png 必须全部写成字面量 src（共 ' + pngLiterals + ' 处字面量 / ' + pngMentions + ' 处引用）—— 平台预览只复制字面量引用的资源'
+    );
+  } else if (!/avatarId/.test(storeSrc) || storeSrc.indexOf('getAvatar,') === -1 || storeSrc.indexOf('setAvatar,') === -1) {
+    fail('store.js 缺少 avatarId / getAvatar / hasAvatar / setAvatar（形象存取）');
+  } else if (app.pages.indexOf('pages/avatar/avatar') === -1) {
+    fail('app.json 未注册 pages/avatar/avatar');
+  } else if (playSrc.indexOf('store.getAvatar()') === -1 || playSrc.indexOf('ch.challenger_avatar') === -1) {
+    fail('pk-play.js 未把「自己 / 出题者」的形象读出来（舞台与结算的对战双方）');
+  } else if (playWxml.indexOf('{{av.tx}}') === -1 || playWxml.indexOf('{{pkAv.tx}}') === -1) {
+    fail('pk-play.wxml 未用形象取图坐标（舞台 / 结算 VS）');
+  } else if (playWxml.indexOf('figureDark') === -1 || playWxml.indexOf('class="darken"') === -1) {
+    fail('pk-play.wxml 缺少答错变黑（figureDark + 黑罩 darken）');
+  } else if (!/\.figure-wrap\.dark\s+\.avatar-img\s*\{[^}]*filter/.test(playWxss)) {
+    fail('pk-play.wxss 缺少 .figure-wrap.dark .avatar-img { filter: ... }（变黑的兜底之一）');
+  } else if (createSrc.indexOf('challengerAvatar') === -1 || cloudSrc.indexOf('challenger_avatar') === -1) {
+    fail('pk-create / pkCloud 未把出题者形象写进挑战行（结算页的「对方」会没有形象）');
+  } else if (mineWxml.indexOf('onEditAvatar') === -1 || mineSrc.indexOf('onEditAvatar') === -1) {
+    fail('mine 页缺少「我的形象」入口（选完就再也改不了了）');
+  } else if (mineSrc.indexOf('!store.hasAvatar()') === -1 || mineSrc.indexOf('/pages/avatar/avatar?from=login') === -1) {
+    fail('mine 页缺少「登录成功后引导选形象」（且必须只在登录动作里触发，不能 onShow 轮询）');
+  } else if (badSyntax.length) {
+    fail('形象相关文件含老引擎无法解析的语法：' + badSyntax.join('；'));
+  } else {
+    pass('形象接线正确（精灵图 ' + sprite.cols + '×' + sprite.rows + '@' + sprite.cell + '，12 个形象，取图常量三处一致）');
+  }
+}
+
 /* ---------- 5. wxml 事件处理函数都有定义 ---------- */
 console.log('[5] 事件处理函数');
 let missingHandler = 0;

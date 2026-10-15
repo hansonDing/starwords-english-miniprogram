@@ -14,6 +14,24 @@
     </view>
   </view>
 
+  <!-- 我的形象：登录后引导选一次，之后随时来这里换 -->
+  <view class="card avatar-entry" bindtap="onEditAvatar">
+    <view class="avatar-clip entry-clip">
+      <image
+        class="avatar-img"
+        src="../../assets/avatars.png"
+        mode="scaleToFill"
+        style="transform: translate({{avatar.tx}}%, {{avatar.ty}}%)"
+      />
+    </view>
+    <view class="entry-info">
+      <text class="entry-title">我的星星形象</text>
+      <text class="entry-sub" wx:if="{{hasAvatar}}">现在是「{{avatar.name}}」，点这里换一个</text>
+      <text class="entry-sub" wx:else>选一个属于你的星星形象吧</text>
+    </view>
+    <text class="entry-arrow">›</text>
+  </view>
+
   <!-- 星星账户：跟读攒下的星星，将来可以参加活动 -->
   <view class="card star-card">
     <view class="star-card-left">
@@ -24,6 +42,16 @@
       </view>
     </view>
     <text class="star-card-hint">攒下的星星，以后可以参加活动哦</text>
+  </view>
+
+  <!-- 发起 PK：用我学过的单词出题，分享给小伙伴（需要登录，出题者身份要写进挑战） -->
+  <view class="card pk-entry" wx:if="{{loggedIn}}" bindtap="onCreatePk">
+    <text class="pk-entry-emoji">⚔️</text>
+    <view class="pk-entry-info">
+      <text class="pk-entry-title">发起单词 PK</text>
+      <text class="pk-entry-sub">用我学过的单词考考小伙伴</text>
+    </view>
+    <text class="pk-entry-arrow">›</text>
   </view>
 
   <!-- 云服务不可用提示（本地学习不受影响） -->
@@ -57,7 +85,29 @@
           <text class="board-sub">第 {{item.week}} 天 · 连续 {{item.streak}} 天</text>
         </view>
         <text class="board-count">{{item.learned}} 词</text>
+        <!-- 挑战按钮：只有别人的行才有（自己的行不给「挑战自己」） -->
+        <view
+          class="challenge-btn"
+          wx:if="{{!item.isMe}}"
+          data-uid="{{item.uid}}"
+          data-name="{{item.name}}"
+          catchtap="onChallenge"
+        ><text>挑战</text></view>
       </view>
+    </view>
+  </view>
+
+  <!-- 我发起的 PK：谁接受了挑战、答对几题 -->
+  <view class="card pk-card" wx:if="{{pkList.length > 0}}">
+    <view class="board-head">
+      <text class="title">我发起的 PK</text>
+    </view>
+    <view class="pk-row" wx:for="{{pkList}}" wx:key="id">
+      <view class="pk-row-info">
+        <text class="pk-row-name">挑战 {{item.who}}</text>
+        <text class="pk-row-sub">{{item.total}} 道题</text>
+      </view>
+      <text class="pk-row-state {{item.done ? 'done' : ''}}">{{item.text}}</text>
     </view>
   </view>
 
