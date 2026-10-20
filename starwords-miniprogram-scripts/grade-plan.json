@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "_comment": "年级划分表（设计容量 320 单元 = 1600 词）。改这里 → 重跑 gen-words-js.mjs 即可，不动代码、不重做云端块。硬约束：必须从 1 连续覆盖到「最后一个年级的 lastUnit」，无重叠无缺口。",
+  "_anchors": [
+    "一年级 = 单元 1..40 = 现有 200 词（w1-1 … w40-5）→ 零迁移，id / 音频包 / 图格全部沿用",
+    "小学 6 个年级 = 单元 1..200 = 1000 词；初中 3 个年级 = 单元 201..320 = 600 词",
+    "单元 = 一组 5 词，沿用现有 week 编号（words.js 里叫 week），全局连续、永不重排"
+  ],
+  "grades": [
+    { "id": "g1", "name": "一年级", "firstUnit": 1, "lastUnit": 40 },
+    { "id": "g2", "name": "二年级", "firstUnit": 41, "lastUnit": 75 },
+    { "id": "g3", "name": "三年级", "firstUnit": 76, "lastUnit": 110 },
+    { "id": "g4", "name": "四年级", "firstUnit": 111, "lastUnit": 140 },
+    { "id": "g5", "name": "五年级", "firstUnit": 141, "lastUnit": 170 },
+    { "id": "g6", "name": "六年级", "firstUnit": 171, "lastUnit": 200 },
+    { "id": "g7", "name": "七年级", "firstUnit": 201, "lastUnit": 240 },
+    { "id": "g8", "name": "八年级", "firstUnit": 241, "lastUnit": 280 },
+    { "id": "g9", "name": "九年级", "firstUnit": 281, "lastUnit": 320 }
+  ]
+}

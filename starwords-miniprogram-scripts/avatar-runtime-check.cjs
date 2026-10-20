@@ -69,6 +69,8 @@ function makeRealStore(storage) {
       if (id === './scheduler') return realScheduler;
       if (id === './avatar') return realAvatar;
       if (id === './cloud') return { cloud: null, cloudError: '', available: false };
+      // 年级功能之后 store 也依赖词库（gradeOfWeek / getWeekWords）—— 纯数据，直接加载真实文件
+      if (id === './words') return loadCjs(path.join(ROOT, 'utils', 'words.js'));
       throw new Error('avatar-runtime-check: store 未预期的 require → ' + id);
     },
     setTimeout: function () {
@@ -191,17 +193,17 @@ console.log('[1] 第一次进来：先选性别');
   check(p.data.selectedId === '', '没有选中项 → 「就选它啦」按钮会是禁用态');
 }
 
-console.log('[2] 选男孩 → 出 6 个形象');
+console.log('[2] 选男孩 → 出 4 个形象');
 {
   const p = makePage(avatarDef);
   p.onLoad({});
   p.onPickGender({ currentTarget: { dataset: { id: 'boy' } } });
   check(p.data.step === 'pick', '进入第 2 步');
-  check(p.data.list.length === 6, '男孩 6 个形象');
+  check(p.data.list.length === 4, '男孩 4 个形象');
   check(p.data.list.every((x) => x.gender === 'boy'), '全是男孩');
   check(p.data.list.every((x) => x.ty === 0), '第 1 行取图 ty 都是 0');
-  check(new Set(p.data.list.map((x) => x.tx)).size === 6, '6 个横向坐标互不相同（不会切到同一个格子）');
-  check(p.data.list.map((x) => x.name).join(',') === '棒球帽,足球星,小超人,音乐星,书包星,天线星', '顺序与精灵图落位一致');
+  check(new Set(p.data.list.map((x) => x.tx)).size === 4, '4 个横向坐标互不相同（不会切到同一个格子）');
+  check(p.data.list.map((x) => x.name).join(',') === '棒球帽,短袖T恤,背带裤,小超人', '顺序与精灵图落位一致');
   check(p.data.selectedId === '' && p.data.preview === null, '还没点具体形象 → 仍然没选中');
 }
 
@@ -212,8 +214,8 @@ console.log('[3] 点形象 → 选中 + 大图预览');
   p.onPickGender({ currentTarget: { dataset: { id: 'boy' } } });
   p.onPickAvatar({ currentTarget: { dataset: { id: 'boy-3' } } });
   check(p.data.selectedId === 'boy-3', '选中 boy-3');
-  check(!!p.data.preview && p.data.preview.name === '小超人', '大图预览切到「小超人」');
-  check(p.data.preview.tx === -33.33 && p.data.preview.ty === 0, '预览坐标是该格子的（第 3 列）');
+  check(!!p.data.preview && p.data.preview.name === '背带裤', '大图预览切到「背带裤」');
+  check(p.data.preview.tx === -50 && p.data.preview.ty === 0, '预览坐标是该格子的（第 3 列 → tx = -50）');
   // 非法 id（理论上点不到）不能把已选清掉
   p.onPickAvatar({ currentTarget: { dataset: { id: 'nope' } } });
   check(p.data.selectedId === 'boy-3', '★非法 id 不清掉已选形象');
@@ -224,10 +226,10 @@ console.log('[4] 换性别来回切：该性别下已保存的形象要自动选
   const p = makePage(avatarDef);
   p.onLoad({});
   p.onPickGender({ currentTarget: { dataset: { id: 'girl' } } });
-  p.onPickAvatar({ currentTarget: { dataset: { id: 'girl-5' } } });
+  p.onPickAvatar({ currentTarget: { dataset: { id: 'girl-3' } } });
   p.onConfirm();
   runTimers();
-  check(storeA.getAvatar().id === 'girl-5', '确认后落盘 girl-5');
+  check(storeA.getAvatar().id === 'girl-3', '确认后落盘 girl-3');
   check(storeA.hasAvatar() === true, 'store 认为已设置');
   check(toasts.indexOf('这就是我啦！') !== -1, '给了成功提示');
   check(navigations.indexOf('navigateBack') !== -1, '确认后回到上一页');
@@ -235,7 +237,7 @@ console.log('[4] 换性别来回切：该性别下已保存的形象要自动选
   const p2 = makePage(avatarDef);
   p2.onLoad({});
   check(p2.data.step === 'pick', '已设置过 → 直接进第 2 步（是来「换」的，不逼着重选性别）');
-  check(p2.data.selectedId === 'girl-5', '自动选中当前形象');
+  check(p2.data.selectedId === 'girl-3', '自动选中当前形象');
   check(p2.data.gender === 'girl', '性别自动落在女孩');
 
   p2.onBackGender();
@@ -244,7 +246,7 @@ console.log('[4] 换性别来回切：该性别下已保存的形象要自动选
   check(p2.data.selectedId === '', '换到男孩 → 男孩下没存过形象，不预选');
   p2.onBackGender();
   p2.onPickGender({ currentTarget: { dataset: { id: 'girl' } } });
-  check(p2.data.selectedId === 'girl-5', '★再切回女孩 → 自动选回 girl-5（不然白选一场）');
+  check(p2.data.selectedId === 'girl-3', '★再切回女孩 → 自动选回 girl-3（不然白选一场）');
 }
 
 console.log('[5] 没选就确认 → 拦下来，不能落盘');
@@ -265,7 +267,7 @@ console.log('[5] 没选就确认 → 拦下来，不能落盘');
 
 console.log('[6] 未登录也能设置（存本机）');
 {
-  check(storeA.getAvatar().id === 'girl-5', '形象页不需要登录就能落盘（云端在这里是桩掉的 null）');
+  check(storeA.getAvatar().id === 'girl-3', '形象页不需要登录就能落盘（云端在这里是桩掉的 null）');
 }
 
 /* ================= PK 答题页 ================= */
@@ -356,7 +358,7 @@ function playAllCorrect(p) {
     await flush();
     check(p.data.mode === 'playing', '未登录也能开始答题（不卡登录墙）');
     check(!!p.data.av && p.data.av.id === 'girl-3', '★舞台形象 = 孩子自己选的 girl-3');
-    check(p.data.av.tx === -33.33 && p.data.av.ty === -50, '取图坐标是 girl-3 那一格');
+    check(p.data.av.tx === -50 && p.data.av.ty === -50, '取图坐标是 girl-3 那一格（第 3 列 / 第 2 行）');
     check(!!p.data.pkAv && p.data.pkAv.id === 'boy-4', '出题者形象来自挑战记录 (boy-4)');
   }
 

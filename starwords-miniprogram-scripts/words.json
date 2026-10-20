@@ -50,7 +50,7 @@
  {
   "id": "w1-5",
   "word": "Watermelon",
-  "phonetic": "/ˈwɔː.təˌmel.ən/",
+  "phonetic": "/ˈwɔː.tərˌmel.ən/",
   "meaning": "西瓜",
   "phrase": "The watermelon is big.",
   "phraseMeaning": "这个西瓜很大。",
@@ -242,7 +242,7 @@
  {
   "id": "w5-1",
   "word": "Mother",
-  "phonetic": "/mother/",
+  "phonetic": "/ˈmʌð.ər/",
   "meaning": "妈妈",
   "phrase": "My mother is kind.",
   "phraseMeaning": "我的妈妈很温柔。",
@@ -254,7 +254,7 @@
  {
   "id": "w5-2",
   "word": "Father",
-  "phonetic": "/father/",
+  "phonetic": "/ˈfɑː.ðər/",
   "meaning": "爸爸",
   "phrase": "My father is tall.",
   "phraseMeaning": "我的爸爸很高。",
@@ -266,7 +266,7 @@
  {
   "id": "w5-3",
   "word": "Sister",
-  "phonetic": "/sister/",
+  "phonetic": "/ˈsɪs.tər/",
   "meaning": "姐妹",
   "phrase": "I love my sister.",
   "phraseMeaning": "我爱我的妹妹。",
@@ -278,7 +278,7 @@
  {
   "id": "w5-4",
   "word": "Brother",
-  "phonetic": "/brother/",
+  "phonetic": "/ˈbrʌð.ər/",
   "meaning": "兄弟",
   "phrase": "My brother is funny.",
   "phraseMeaning": "我的哥哥很有趣。",
@@ -290,7 +290,7 @@
  {
   "id": "w5-5",
   "word": "Baby",
-  "phonetic": "/baby/",
+  "phonetic": "/ˈbeɪ.bi/",
   "meaning": "婴儿",
   "phrase": "The baby is sleeping.",
   "phraseMeaning": "宝宝在睡觉。",
@@ -302,7 +302,7 @@
  {
   "id": "w6-1",
   "word": "Head",
-  "phonetic": "/head/",
+  "phonetic": "/hed/",
   "meaning": "头",
   "phrase": "Shake your head.",
   "phraseMeaning": "摇摇你的头。",
@@ -314,7 +314,7 @@
  {
   "id": "w6-2",
   "word": "Eye",
-  "phonetic": "/eye/",
+  "phonetic": "/aɪ/",
   "meaning": "眼睛",
   "phrase": "This is my eye.",
   "phraseMeaning": "这是我的眼睛。",
@@ -326,7 +326,7 @@
  {
   "id": "w6-3",
   "word": "Ear",
-  "phonetic": "/ear/",
+  "phonetic": "/ɪər/",
   "meaning": "耳朵",
   "phrase": "Touch your ear.",
   "phraseMeaning": "摸摸你的耳朵。",
@@ -338,7 +338,7 @@
  {
   "id": "w6-4",
   "word": "Nose",
-  "phonetic": "/nose/",
+  "phonetic": "/nəʊz/",
   "meaning": "鼻子",
   "phrase": "My nose can smell.",
   "phraseMeaning": "我的鼻子能闻味道。",
@@ -350,7 +350,7 @@
  {
   "id": "w6-5",
   "word": "Mouth",
-  "phonetic": "/mouth/",
+  "phonetic": "/maʊθ/",
   "meaning": "嘴巴",
   "phrase": "Open your mouth.",
   "phraseMeaning": "张开你的嘴巴。",
@@ -362,7 +362,7 @@
  {
   "id": "w7-1",
   "word": "Hat",
-  "phonetic": "/hat/",
+  "phonetic": "/hæt/",
   "meaning": "帽子",
   "phrase": "I wear a red hat.",
   "phraseMeaning": "我戴一顶红帽子。",
@@ -374,7 +374,7 @@
  {
   "id": "w7-2",
   "word": "Shirt",
-  "phonetic": "/shirt/",
+  "phonetic": "/ʃɜːrt/",
   "meaning": "衬衫",
   "phrase": "My shirt is new.",
   "phraseMeaning": "我的衬衫是新的。",
@@ -386,7 +386,7 @@
  {
   "id": "w7-3",
   "word": "Pants",
-  "phonetic": "/pants/",
+  "phonetic": "/pænts/",
   "meaning": "裤子",
   "phrase": "I wear blue pants.",
   "phraseMeaning": "我穿蓝色的裤子。",
@@ -398,7 +398,7 @@
  {
   "id": "w7-4",
   "word": "Shoes",
-  "phonetic": "/shoes/",
+  "phonetic": "/ʃuːz/",
   "meaning": "鞋子",
   "phrase": "My shoes are new.",
   "phraseMeaning": "我的鞋子是新的。",
@@ -410,7 +410,7 @@
  {
   "id": "w7-5",
   "word": "Socks",
-  "phonetic": "/socks/",
+  "phonetic": "/sɒks/",
   "meaning": "袜子",
   "phrase": "Where are my socks?",
   "phraseMeaning": "我的袜子在哪儿？",
@@ -422,7 +422,7 @@
  {
   "id": "w8-1",
   "word": "Bread",
-  "phonetic": "/bread/",
+  "phonetic": "/bred/",
   "meaning": "面包",
   "phrase": "I like warm bread.",
   "phraseMeaning": "我喜欢热面包。",
@@ -434,7 +434,7 @@
  {
   "id": "w8-2",
   "word": "Rice",
-  "phonetic": "/rice/",
+  "phonetic": "/raɪs/",
   "meaning": "米饭",
   "phrase": "We eat rice.",
   "phraseMeaning": "我们吃米饭。",
@@ -446,7 +446,7 @@
  {
   "id": "w8-3",
   "word": "Noodles",
-  "phonetic": "/noodles/",
+  "phonetic": "/ˈnuː.dəlz/",
   "meaning": "面条",
   "phrase": "I like noodles.",
   "phraseMeaning": "我喜欢面条。",
@@ -458,7 +458,7 @@
  {
   "id": "w8-4",
   "word": "Egg",
-  "phonetic": "/egg/",
+  "phonetic": "/eɡ/",
   "meaning": "鸡蛋",
   "phrase": "I eat an egg.",
   "phraseMeaning": "我吃一个鸡蛋。",
@@ -470,7 +470,7 @@
  {
   "id": "w8-5",
   "word": "Chicken",
-  "phonetic": "/chicken/",
+  "phonetic": "/ˈtʃɪk.ɪn/",
   "meaning": "鸡肉",
   "phrase": "The chicken is tasty.",
   "phraseMeaning": "鸡肉很好吃。",
@@ -482,7 +482,7 @@
  {
   "id": "w9-1",
   "word": "Water",
-  "phonetic": "/water/",
+  "phonetic": "/ˈwɔː.tər/",
   "meaning": "水",
   "phrase": "I drink water.",
   "phraseMeaning": "我喝水。",
@@ -494,7 +494,7 @@
  {
   "id": "w9-2",
   "word": "Milk",
-  "phonetic": "/milk/",
+  "phonetic": "/mɪlk/",
   "meaning": "牛奶",
   "phrase": "I drink warm milk.",
   "phraseMeaning": "我喝温牛奶。",
@@ -506,7 +506,7 @@
  {
   "id": "w9-3",
   "word": "Juice",
-  "phonetic": "/juice/",
+  "phonetic": "/dʒuːs/",
   "meaning": "果汁",
   "phrase": "This juice is sweet.",
   "phraseMeaning": "这杯果汁很甜。",
@@ -518,7 +518,7 @@
  {
   "id": "w9-4",
   "word": "Tea",
-  "phonetic": "/tea/",
+  "phonetic": "/tiː/",
   "meaning": "茶",
   "phrase": "Grandma likes tea.",
   "phraseMeaning": "奶奶喜欢喝茶。",
@@ -530,7 +530,7 @@
  {
   "id": "w9-5",
   "word": "Soup",
-  "phonetic": "/soup/",
+  "phonetic": "/suːp/",
   "meaning": "汤",
   "phrase": "The soup is hot.",
   "phraseMeaning": "汤很烫。",
@@ -542,7 +542,7 @@
  {
   "id": "w10-1",
   "word": "Door",
-  "phonetic": "/door/",
+  "phonetic": "/dɔːr/",
   "meaning": "门",
   "phrase": "Please open the door.",
   "phraseMeaning": "请打开门。",
@@ -554,7 +554,7 @@
  {
   "id": "w10-2",
   "word": "Window",
-  "phonetic": "/window/",
+  "phonetic": "/ˈwɪn.dəʊ/",
   "meaning": "窗户",
   "phrase": "Look out the window.",
   "phraseMeaning": "看看窗外。",
@@ -578,7 +578,7 @@
  {
   "id": "w10-4",
   "word": "Chair",
-  "phonetic": "/chair/",
+  "phonetic": "/tʃeər/",
   "meaning": "椅子",
   "phrase": "Sit on the chair.",
   "phraseMeaning": "坐在椅子上。",
@@ -590,7 +590,7 @@
  {
   "id": "w10-5",
   "word": "Table",
-  "phonetic": "/table/",
+  "phonetic": "/ˈteɪ.bəl/",
   "meaning": "桌子",
   "phrase": "The table is big.",
   "phraseMeaning": "桌子很大。",
@@ -602,7 +602,7 @@
  {
   "id": "w11-1",
   "word": "Teacher",
-  "phonetic": "/teacher/",
+  "phonetic": "/ˈtiː.tʃər/",
   "meaning": "老师",
   "phrase": "My teacher is nice.",
   "phraseMeaning": "我的老师很和蔼。",
@@ -614,7 +614,7 @@
  {
   "id": "w11-2",
   "word": "Student",
-  "phonetic": "/student/",
+  "phonetic": "/ˈstjuː.dənt/",
   "meaning": "学生",
   "phrase": "I am a student.",
   "phraseMeaning": "我是学生。",
@@ -638,7 +638,7 @@
  {
   "id": "w11-4",
   "word": "Ruler",
-  "phonetic": "/ruler/",
+  "phonetic": "/ˈruː.lər/",
   "meaning": "尺子",
   "phrase": "I have a ruler.",
   "phraseMeaning": "我有一把尺子。",
@@ -650,7 +650,7 @@
  {
   "id": "w11-5",
   "word": "Eraser",
-  "phonetic": "/eraser/",
+  "phonetic": "/ɪˈreɪ.zər/",
   "meaning": "橡皮",
   "phrase": "Where is my eraser?",
   "phraseMeaning": "我的橡皮在哪儿？",
@@ -662,7 +662,7 @@
  {
   "id": "w12-1",
   "word": "Doll",
-  "phonetic": "/doll/",
+  "phonetic": "/dɒl/",
   "meaning": "玩偶",
   "phrase": "My doll is pretty.",
   "phraseMeaning": "我的娃娃很漂亮。",
@@ -674,7 +674,7 @@
  {
   "id": "w12-2",
   "word": "Kite",
-  "phonetic": "/kite/",
+  "phonetic": "/kaɪt/",
   "meaning": "风筝",
   "phrase": "The kite can fly.",
   "phraseMeaning": "风筝会飞。",
@@ -686,7 +686,7 @@
  {
   "id": "w12-3",
   "word": "Robot",
-  "phonetic": "/robot/",
+  "phonetic": "/ˈrəʊ.bɒt/",
   "meaning": "机器人",
   "phrase": "My robot is cool.",
   "phraseMeaning": "我的机器人很酷。",
@@ -698,7 +698,7 @@
  {
   "id": "w12-4",
   "word": "Blocks",
-  "phonetic": "/blocks/",
+  "phonetic": "/blɒks/",
   "meaning": "积木",
   "phrase": "I build with blocks.",
   "phraseMeaning": "我用积木搭东西。",
@@ -710,7 +710,7 @@
  {
   "id": "w12-5",
   "word": "Puzzle",
-  "phonetic": "/puzzle/",
+  "phonetic": "/ˈpʌz.əl/",
   "meaning": "拼图",
   "phrase": "Let's do a puzzle.",
   "phraseMeaning": "我们来拼拼图吧。",
@@ -722,7 +722,7 @@
  {
   "id": "w13-1",
   "word": "Bus",
-  "phonetic": "/bus/",
+  "phonetic": "/bʌs/",
   "meaning": "公交车",
   "phrase": "The bus is big.",
   "phraseMeaning": "公交车很大。",
@@ -734,7 +734,7 @@
  {
   "id": "w13-2",
   "word": "Train",
-  "phonetic": "/train/",
+  "phonetic": "/treɪn/",
   "meaning": "火车",
   "phrase": "The train goes fast.",
   "phraseMeaning": "火车开得很快。",
@@ -746,7 +746,7 @@
  {
   "id": "w13-3",
   "word": "Bike",
-  "phonetic": "/bike/",
+  "phonetic": "/baɪk/",
   "meaning": "自行车",
   "phrase": "I ride my bike.",
   "phraseMeaning": "我骑自行车。",
@@ -758,7 +758,7 @@
  {
   "id": "w13-4",
   "word": "Plane",
-  "phonetic": "/plane/",
+  "phonetic": "/pleɪn/",
   "meaning": "飞机",
   "phrase": "The plane flies high.",
   "phraseMeaning": "飞机飞得很高。",
@@ -770,7 +770,7 @@
  {
   "id": "w13-5",
   "word": "Boat",
-  "phonetic": "/boat/",
+  "phonetic": "/bəʊt/",
   "meaning": "船",
   "phrase": "The boat is small.",
   "phraseMeaning": "小船很小。",
@@ -782,7 +782,7 @@
  {
   "id": "w14-1",
   "word": "Rain",
-  "phonetic": "/rain/",
+  "phonetic": "/reɪn/",
   "meaning": "雨",
   "phrase": "I like the rain.",
   "phraseMeaning": "我喜欢下雨。",
@@ -794,7 +794,7 @@
  {
   "id": "w14-2",
   "word": "Snow",
-  "phonetic": "/snow/",
+  "phonetic": "/snəʊ/",
   "meaning": "雪",
   "phrase": "The snow is white.",
   "phraseMeaning": "雪是白色的。",
@@ -806,7 +806,7 @@
  {
   "id": "w14-3",
   "word": "Wind",
-  "phonetic": "/wind/",
+  "phonetic": "/wɪnd/",
   "meaning": "风",
   "phrase": "The wind blows.",
   "phraseMeaning": "风在吹。",
@@ -818,7 +818,7 @@
  {
   "id": "w14-4",
   "word": "Cloud",
-  "phonetic": "/cloud/",
+  "phonetic": "/klaʊd/",
   "meaning": "云",
   "phrase": "That cloud is big.",
   "phraseMeaning": "那朵云很大。",
@@ -830,7 +830,7 @@
  {
   "id": "w14-5",
   "word": "Rainbow",
-  "phonetic": "/rainbow/",
+  "phonetic": "/ˈreɪn.bəʊ/",
   "meaning": "彩虹",
   "phrase": "Look at the rainbow.",
   "phraseMeaning": "看那道彩虹。",
@@ -842,7 +842,7 @@
  {
   "id": "w15-1",
   "word": "Park",
-  "phonetic": "/park/",
+  "phonetic": "/pɑːrk/",
   "meaning": "公园",
   "phrase": "We play in the park.",
   "phraseMeaning": "我们在公园里玩。",
@@ -854,7 +854,7 @@
  {
   "id": "w15-2",
   "word": "Zoo",
-  "phonetic": "/zoo/",
+  "phonetic": "/zuː/",
   "meaning": "动物园",
   "phrase": "Let's go to the zoo.",
   "phraseMeaning": "我们去动物园吧。",
@@ -866,7 +866,7 @@
  {
   "id": "w15-3",
   "word": "Museum",
-  "phonetic": "/museum/",
+  "phonetic": "/mjuːˈziː.əm/",
   "meaning": "博物馆",
   "phrase": "The museum is big.",
   "phraseMeaning": "博物馆很大。",
@@ -878,7 +878,7 @@
  {
   "id": "w15-4",
   "word": "Library",
-  "phonetic": "/library/",
+  "phonetic": "/ˈlaɪ.brər.i/",
   "meaning": "图书馆",
   "phrase": "I like the library.",
   "phraseMeaning": "我喜欢图书馆。",
@@ -890,7 +890,7 @@
  {
   "id": "w15-5",
   "word": "Store",
-  "phonetic": "/store/",
+  "phonetic": "/stɔːr/",
   "meaning": "商店",
   "phrase": "Mom is at the store.",
   "phraseMeaning": "妈妈在商店里。",
@@ -902,7 +902,7 @@
  {
   "id": "w16-1",
   "word": "Run",
-  "phonetic": "/run/",
+  "phonetic": "/rʌn/",
   "meaning": "跑",
   "phrase": "I can run fast.",
   "phraseMeaning": "我能跑得很快。",
@@ -914,7 +914,7 @@
  {
   "id": "w16-2",
   "word": "Jump",
-  "phonetic": "/jump/",
+  "phonetic": "/dʒʌmp/",
   "meaning": "跳",
   "phrase": "Let's jump up high.",
   "phraseMeaning": "我们跳得高高的。",
@@ -926,7 +926,7 @@
  {
   "id": "w16-3",
   "word": "Walk",
-  "phonetic": "/walk/",
+  "phonetic": "/wɔːk/",
   "meaning": "走",
   "phrase": "We walk to school.",
   "phraseMeaning": "我们走路去学校。",
@@ -938,7 +938,7 @@
  {
   "id": "w16-4",
   "word": "Sing",
-  "phonetic": "/sing/",
+  "phonetic": "/sɪŋ/",
   "meaning": "唱歌",
   "phrase": "I like to sing.",
   "phraseMeaning": "我喜欢唱歌。",
@@ -950,7 +950,7 @@
  {
   "id": "w16-5",
   "word": "Dance",
-  "phonetic": "/dance/",
+  "phonetic": "/dɑːns/",
   "meaning": "跳舞",
   "phrase": "Dance with me!",
   "phraseMeaning": "跟我一起跳舞！",
@@ -962,7 +962,7 @@
  {
   "id": "w17-1",
   "word": "Happy",
-  "phonetic": "/happy/",
+  "phonetic": "/ˈhæp.i/",
   "meaning": "开心",
   "phrase": "I am happy today.",
   "phraseMeaning": "我今天很开心。",
@@ -974,7 +974,7 @@
  {
   "id": "w17-2",
   "word": "Sad",
-  "phonetic": "/sad/",
+  "phonetic": "/sæd/",
   "meaning": "难过",
   "phrase": "The baby is sad.",
   "phraseMeaning": "宝宝很难过。",
@@ -986,7 +986,7 @@
  {
   "id": "w17-3",
   "word": "Angry",
-  "phonetic": "/angry/",
+  "phonetic": "/ˈæŋ.ɡri/",
   "meaning": "生气",
   "phrase": "Dad looks angry.",
   "phraseMeaning": "爸爸看起来生气了。",
@@ -998,7 +998,7 @@
  {
   "id": "w17-4",
   "word": "Tired",
-  "phonetic": "/tired/",
+  "phonetic": "/ˈtaɪ.ərd/",
   "meaning": "累",
   "phrase": "I am tired now.",
   "phraseMeaning": "我现在很累。",
@@ -1010,7 +1010,7 @@
  {
   "id": "w17-5",
   "word": "Scared",
-  "phonetic": "/scared/",
+  "phonetic": "/skeərd/",
   "meaning": "害怕",
   "phrase": "Don't be scared.",
   "phraseMeaning": "别害怕。",
@@ -1034,7 +1034,7 @@
  {
   "id": "w18-2",
   "word": "Blue",
-  "phonetic": "/blue/",
+  "phonetic": "/bluː/",
   "meaning": "蓝色",
   "phrase": "The sky is blue.",
   "phraseMeaning": "天空是蓝色的。",
@@ -1046,7 +1046,7 @@
  {
   "id": "w18-3",
   "word": "Yellow",
-  "phonetic": "/yellow/",
+  "phonetic": "/ˈjel.əʊ/",
   "meaning": "黄色",
   "phrase": "The sun is yellow.",
   "phraseMeaning": "太阳是黄色的。",
@@ -1058,7 +1058,7 @@
  {
   "id": "w18-4",
   "word": "Green",
-  "phonetic": "/green/",
+  "phonetic": "/ɡriːn/",
   "meaning": "绿色",
   "phrase": "The grass is green.",
   "phraseMeaning": "小草是绿色的。",
@@ -1070,7 +1070,7 @@
  {
   "id": "w18-5",
   "word": "Purple",
-  "phonetic": "/purple/",
+  "phonetic": "/ˈpɜː.pəl/",
   "meaning": "紫色",
   "phrase": "I like purple.",
   "phraseMeaning": "我喜欢紫色。",
@@ -1082,7 +1082,7 @@
  {
   "id": "w19-1",
   "word": "One",
-  "phonetic": "/one/",
+  "phonetic": "/wʌn/",
   "meaning": "一",
   "phrase": "I have one nose.",
   "phraseMeaning": "我有一个鼻子。",
@@ -1094,7 +1094,7 @@
  {
   "id": "w19-2",
   "word": "Two",
-  "phonetic": "/two/",
+  "phonetic": "/tuː/",
   "meaning": "二",
   "phrase": "I have two hands.",
   "phraseMeaning": "我有两只手。",
@@ -1106,7 +1106,7 @@
  {
   "id": "w19-3",
   "word": "Three",
-  "phonetic": "/three/",
+  "phonetic": "/θriː/",
   "meaning": "三",
   "phrase": "I see three stars.",
   "phraseMeaning": "我看见三颗星星。",
@@ -1118,7 +1118,7 @@
  {
   "id": "w19-4",
   "word": "Four",
-  "phonetic": "/four/",
+  "phonetic": "/fɔːr/",
   "meaning": "四",
   "phrase": "A cat has four legs.",
   "phraseMeaning": "猫有四条腿。",
@@ -1130,7 +1130,7 @@
  {
   "id": "w19-5",
   "word": "Five",
-  "phonetic": "/five/",
+  "phonetic": "/faɪv/",
   "meaning": "五",
   "phrase": "I have five fingers.",
   "phraseMeaning": "我有五根手指。",
@@ -1142,7 +1142,7 @@
  {
   "id": "w20-1",
   "word": "Circle",
-  "phonetic": "/circle/",
+  "phonetic": "/ˈsɜː.kəl/",
   "meaning": "圆形",
   "phrase": "The sun is a circle.",
   "phraseMeaning": "太阳是一个圆形。",
@@ -1154,7 +1154,7 @@
  {
   "id": "w20-2",
   "word": "Square",
-  "phonetic": "/square/",
+  "phonetic": "/skweər/",
   "meaning": "正方形",
   "phrase": "This box is a square.",
   "phraseMeaning": "这个盒子是正方形的。",
@@ -1166,7 +1166,7 @@
  {
   "id": "w20-3",
   "word": "Triangle",
-  "phonetic": "/triangle/",
+  "phonetic": "/ˈtraɪ.æŋ.ɡəl/",
   "meaning": "三角形",
   "phrase": "Draw a triangle.",
   "phraseMeaning": "画一个三角形。",
@@ -1178,7 +1178,7 @@
  {
   "id": "w20-4",
   "word": "Rectangle",
-  "phonetic": "/rectangle/",
+  "phonetic": "/ˈrek.tæŋ.ɡəl/",
   "meaning": "长方形",
   "phrase": "The door is a rectangle.",
   "phraseMeaning": "门是长方形的。",
@@ -1190,7 +1190,7 @@
  {
   "id": "w20-5",
   "word": "Heart",
-  "phonetic": "/heart/",
+  "phonetic": "/hɑːrt/",
   "meaning": "心形",
   "phrase": "I draw a red heart.",
   "phraseMeaning": "我画一颗红心。",
@@ -1202,7 +1202,7 @@
  {
   "id": "w21-1",
   "word": "Cow",
-  "phonetic": "/cow/",
+  "phonetic": "/kaʊ/",
   "meaning": "奶牛",
   "phrase": "The cow says moo.",
   "phraseMeaning": "奶牛哞哞叫。",
@@ -1214,7 +1214,7 @@
  {
   "id": "w21-2",
   "word": "Pig",
-  "phonetic": "/pig/",
+  "phonetic": "/pɪɡ/",
   "meaning": "猪",
   "phrase": "The pig is pink.",
   "phraseMeaning": "小猪是粉色的。",
@@ -1226,7 +1226,7 @@
  {
   "id": "w21-3",
   "word": "Duck",
-  "phonetic": "/duck/",
+  "phonetic": "/dʌk/",
   "meaning": "鸭子",
   "phrase": "The duck can swim.",
   "phraseMeaning": "鸭子会游泳。",
@@ -1238,7 +1238,7 @@
  {
   "id": "w21-4",
   "word": "Horse",
-  "phonetic": "/horse/",
+  "phonetic": "/hɔːrs/",
   "meaning": "马",
   "phrase": "The horse runs fast.",
   "phraseMeaning": "马跑得很快。",
@@ -1250,7 +1250,7 @@
  {
   "id": "w21-5",
   "word": "Sheep",
-  "phonetic": "/sheep/",
+  "phonetic": "/ʃiːp/",
   "meaning": "绵羊",
   "phrase": "The sheep is soft.",
   "phraseMeaning": "绵羊很柔软。",
@@ -1262,7 +1262,7 @@
  {
   "id": "w22-1",
   "word": "Lion",
-  "phonetic": "/lion/",
+  "phonetic": "/ˈlaɪ.ən/",
   "meaning": "狮子",
   "phrase": "The lion is strong.",
   "phraseMeaning": "狮子很强壮。",
@@ -1274,7 +1274,7 @@
  {
   "id": "w22-2",
   "word": "Tiger",
-  "phonetic": "/tiger/",
+  "phonetic": "/ˈtaɪ.ɡər/",
   "meaning": "老虎",
   "phrase": "The tiger has stripes.",
   "phraseMeaning": "老虎身上有条纹。",
@@ -1286,7 +1286,7 @@
  {
   "id": "w22-3",
   "word": "Bear",
-  "phonetic": "/bear/",
+  "phonetic": "/beər/",
   "meaning": "熊",
   "phrase": "The bear likes honey.",
   "phraseMeaning": "熊喜欢蜂蜜。",
@@ -1298,7 +1298,7 @@
  {
   "id": "w22-4",
   "word": "Monkey",
-  "phonetic": "/monkey/",
+  "phonetic": "/ˈmʌŋ.ki/",
   "meaning": "猴子",
   "phrase": "The monkey can climb.",
   "phraseMeaning": "猴子会爬树。",
@@ -1310,7 +1310,7 @@
  {
   "id": "w22-5",
   "word": "Elephant",
-  "phonetic": "/elephant/",
+  "phonetic": "/ˈel.ɪ.fənt/",
   "meaning": "大象",
   "phrase": "An elephant is big.",
   "phraseMeaning": "大象很大。",
@@ -1322,7 +1322,7 @@
  {
   "id": "w23-1",
   "word": "Shark",
-  "phonetic": "/shark/",
+  "phonetic": "/ʃɑːrk/",
   "meaning": "鲨鱼",
   "phrase": "The shark swims fast.",
   "phraseMeaning": "鲨鱼游得很快。",
@@ -1334,7 +1334,7 @@
  {
   "id": "w23-2",
   "word": "Whale",
-  "phonetic": "/whale/",
+  "phonetic": "/weɪl/",
   "meaning": "鲸鱼",
   "phrase": "The whale is very big.",
   "phraseMeaning": "鲸鱼非常大。",
@@ -1346,7 +1346,7 @@
  {
   "id": "w23-3",
   "word": "Dolphin",
-  "phonetic": "/dolphin/",
+  "phonetic": "/ˈdɒl.fɪn/",
   "meaning": "海豚",
   "phrase": "The dolphin can jump.",
   "phraseMeaning": "海豚会跳出水面。",
@@ -1358,7 +1358,7 @@
  {
   "id": "w23-4",
   "word": "Crab",
-  "phonetic": "/crab/",
+  "phonetic": "/kræb/",
   "meaning": "螃蟹",
   "phrase": "The crab has claws.",
   "phraseMeaning": "螃蟹有钳子。",
@@ -1370,7 +1370,7 @@
  {
   "id": "w23-5",
   "word": "Turtle",
-  "phonetic": "/turtle/",
+  "phonetic": "/ˈtɜːr.təl/",
   "meaning": "乌龟",
   "phrase": "The turtle is slow.",
   "phraseMeaning": "乌龟爬得慢。",
@@ -1382,7 +1382,7 @@
  {
   "id": "w24-1",
   "word": "Bee",
-  "phonetic": "/bee/",
+  "phonetic": "/biː/",
   "meaning": "蜜蜂",
   "phrase": "The bee makes honey.",
   "phraseMeaning": "蜜蜂酿蜂蜜。",
@@ -1394,7 +1394,7 @@
  {
   "id": "w24-2",
   "word": "Ant",
-  "phonetic": "/ant/",
+  "phonetic": "/ænt/",
   "meaning": "蚂蚁",
   "phrase": "The ant is small.",
   "phraseMeaning": "蚂蚁很小。",
@@ -1406,7 +1406,7 @@
  {
   "id": "w24-3",
   "word": "Butterfly",
-  "phonetic": "/butterfly/",
+  "phonetic": "/ˈbʌt.ə.flaɪ/",
   "meaning": "蝴蝶",
   "phrase": "Look at the butterfly!",
   "phraseMeaning": "看那只蝴蝶！",
@@ -1418,7 +1418,7 @@
  {
   "id": "w24-4",
   "word": "Spider",
-  "phonetic": "/spider/",
+  "phonetic": "/ˈspaɪ.dər/",
   "meaning": "蜘蛛",
   "phrase": "The spider makes a web.",
   "phraseMeaning": "蜘蛛会结网。",
@@ -1430,7 +1430,7 @@
  {
   "id": "w24-5",
   "word": "Ladybug",
-  "phonetic": "/ladybug/",
+  "phonetic": "/ˈleɪ.di.bʌɡ/",
   "meaning": "瓢虫",
   "phrase": "The ladybug is red.",
   "phraseMeaning": "瓢虫是红色的。",
@@ -1442,7 +1442,7 @@
  {
   "id": "w25-1",
   "word": "Carrot",
-  "phonetic": "/carrot/",
+  "phonetic": "/ˈkær.ət/",
   "meaning": "胡萝卜",
   "phrase": "I eat a carrot.",
   "phraseMeaning": "我吃一根胡萝卜。",
@@ -1454,7 +1454,7 @@
  {
   "id": "w25-2",
   "word": "Potato",
-  "phonetic": "/potato/",
+  "phonetic": "/pəˈteɪ.təʊ/",
   "meaning": "土豆",
   "phrase": "The potato is brown.",
   "phraseMeaning": "土豆是棕色的。",
@@ -1466,7 +1466,7 @@
  {
   "id": "w25-3",
   "word": "Tomato",
-  "phonetic": "/tomato/",
+  "phonetic": "/təˈmɑː.təʊ/",
   "meaning": "西红柿",
   "phrase": "This tomato is red.",
   "phraseMeaning": "这个西红柿是红的。",
@@ -1478,7 +1478,7 @@
  {
   "id": "w25-4",
   "word": "Corn",
-  "phonetic": "/corn/",
+  "phonetic": "/kɔːrn/",
   "meaning": "玉米",
   "phrase": "I like sweet corn.",
   "phraseMeaning": "我喜欢甜玉米。",
@@ -1490,7 +1490,7 @@
  {
   "id": "w25-5",
   "word": "Onion",
-  "phonetic": "/onion/",
+  "phonetic": "/ˈʌn.jən/",
   "meaning": "洋葱",
   "phrase": "I cut the onion.",
   "phraseMeaning": "我切洋葱。",
@@ -1502,7 +1502,7 @@
  {
   "id": "w26-1",
   "word": "Cake",
-  "phonetic": "/cake/",
+  "phonetic": "/keɪk/",
   "meaning": "蛋糕",
   "phrase": "I want some cake.",
   "phraseMeaning": "我想吃蛋糕。",
@@ -1514,7 +1514,7 @@
  {
   "id": "w26-2",
   "word": "Cookie",
-  "phonetic": "/cookie/",
+  "phonetic": "/ˈkʊk.i/",
   "meaning": "饼干",
   "phrase": "This cookie is sweet.",
   "phraseMeaning": "这块饼干很甜。",
@@ -1526,7 +1526,7 @@
  {
   "id": "w26-3",
   "word": "Ice cream",
-  "phonetic": "/icecream/",
+  "phonetic": "/ˌaɪs ˈkriːm/",
   "meaning": "冰淇淋",
   "phrase": "I love ice cream.",
   "phraseMeaning": "我爱冰淇淋。",
@@ -1538,7 +1538,7 @@
  {
   "id": "w26-4",
   "word": "Candy",
-  "phonetic": "/candy/",
+  "phonetic": "/ˈkæn.di/",
   "meaning": "糖果",
   "phrase": "I like candy.",
   "phraseMeaning": "我喜欢糖果。",
@@ -1550,7 +1550,7 @@
  {
   "id": "w26-5",
   "word": "Donut",
-  "phonetic": "/donut/",
+  "phonetic": "/ˈdəʊ.nʌt/",
   "meaning": "甜甜圈",
   "phrase": "The donut has a hole.",
   "phraseMeaning": "甜甜圈有个洞。",
@@ -1562,7 +1562,7 @@
  {
   "id": "w27-1",
   "word": "Cup",
-  "phonetic": "/cup/",
+  "phonetic": "/kʌp/",
   "meaning": "杯子",
   "phrase": "I drink from a cup.",
   "phraseMeaning": "我用杯子喝水。",
@@ -1574,7 +1574,7 @@
  {
   "id": "w27-2",
   "word": "Plate",
-  "phonetic": "/plate/",
+  "phonetic": "/pleɪt/",
   "meaning": "盘子",
   "phrase": "The plate is clean.",
   "phraseMeaning": "盘子很干净。",
@@ -1586,7 +1586,7 @@
  {
   "id": "w27-3",
   "word": "Spoon",
-  "phonetic": "/spoon/",
+  "phonetic": "/spuːn/",
   "meaning": "勺子",
   "phrase": "I need a spoon.",
   "phraseMeaning": "我需要一把勺子。",
@@ -1598,7 +1598,7 @@
  {
   "id": "w27-4",
   "word": "Fork",
-  "phonetic": "/fork/",
+  "phonetic": "/fɔːrk/",
   "meaning": "叉子",
   "phrase": "This fork is small.",
   "phraseMeaning": "这把叉子很小。",
@@ -1610,7 +1610,7 @@
  {
   "id": "w27-5",
   "word": "Bowl",
-  "phonetic": "/bowl/",
+  "phonetic": "/bəʊl/",
   "meaning": "碗",
   "phrase": "The bowl is full.",
   "phraseMeaning": "碗里装得满满的。",
@@ -1622,7 +1622,7 @@
  {
   "id": "w28-1",
   "word": "Toothbrush",
-  "phonetic": "/toothbrush/",
+  "phonetic": "/ˈtuːθ.brʌʃ/",
   "meaning": "牙刷",
   "phrase": "Where is my toothbrush?",
   "phraseMeaning": "我的牙刷在哪儿？",
@@ -1634,7 +1634,7 @@
  {
   "id": "w28-2",
   "word": "Towel",
-  "phonetic": "/towel/",
+  "phonetic": "/ˈtaʊ.əl/",
   "meaning": "毛巾",
   "phrase": "This towel is soft.",
   "phraseMeaning": "这条毛巾很软。",
@@ -1646,7 +1646,7 @@
  {
   "id": "w28-3",
   "word": "Soap",
-  "phonetic": "/soap/",
+  "phonetic": "/səʊp/",
   "meaning": "肥皂",
   "phrase": "The soap smells good.",
   "phraseMeaning": "肥皂很香。",
@@ -1658,7 +1658,7 @@
  {
   "id": "w28-4",
   "word": "Comb",
-  "phonetic": "/comb/",
+  "phonetic": "/kəʊm/",
   "meaning": "梳子",
   "phrase": "I comb my hair.",
   "phraseMeaning": "我梳头发。",
@@ -1670,7 +1670,7 @@
  {
   "id": "w28-5",
   "word": "Mirror",
-  "phonetic": "/mirror/",
+  "phonetic": "/ˈmɪr.ər/",
   "meaning": "镜子",
   "phrase": "Look in the mirror.",
   "phraseMeaning": "照照镜子。",
@@ -1682,7 +1682,7 @@
  {
   "id": "w29-1",
   "word": "Pillow",
-  "phonetic": "/pillow/",
+  "phonetic": "/ˈpɪl.əʊ/",
   "meaning": "枕头",
   "phrase": "I hug my pillow.",
   "phraseMeaning": "我抱着枕头。",
@@ -1694,7 +1694,7 @@
  {
   "id": "w29-2",
   "word": "Blanket",
-  "phonetic": "/blanket/",
+  "phonetic": "/ˈblæŋ.kɪt/",
   "meaning": "毯子",
   "phrase": "The blanket is warm.",
   "phraseMeaning": "毯子很暖和。",
@@ -1706,7 +1706,7 @@
  {
   "id": "w29-3",
   "word": "Lamp",
-  "phonetic": "/lamp/",
+  "phonetic": "/læmp/",
   "meaning": "台灯",
   "phrase": "Turn on the lamp.",
   "phraseMeaning": "打开台灯。",
@@ -1718,7 +1718,7 @@
  {
   "id": "w29-4",
   "word": "Clock",
-  "phonetic": "/clock/",
+  "phonetic": "/klɒk/",
   "meaning": "时钟",
   "phrase": "The clock is ticking.",
   "phraseMeaning": "时钟在滴答响。",
@@ -1730,7 +1730,7 @@
  {
   "id": "w29-5",
   "word": "Toybox",
-  "phonetic": "/toybox/",
+  "phonetic": "/ˈtɔɪ.bɒks/",
   "meaning": "玩具箱",
   "phrase": "My toybox is full.",
   "phraseMeaning": "我的玩具箱满了。",
@@ -1742,7 +1742,7 @@
  {
   "id": "w30-1",
   "word": "Slide",
-  "phonetic": "/slide/",
+  "phonetic": "/slaɪd/",
   "meaning": "滑梯",
   "phrase": "Let's go down the slide.",
   "phraseMeaning": "我们去滑滑梯吧。",
@@ -1754,7 +1754,7 @@
  {
   "id": "w30-2",
   "word": "Swing",
-  "phonetic": "/swing/",
+  "phonetic": "/swɪŋ/",
   "meaning": "秋千",
   "phrase": "I play on the swing.",
   "phraseMeaning": "我荡秋千。",
@@ -1766,7 +1766,7 @@
  {
   "id": "w30-3",
   "word": "Sandbox",
-  "phonetic": "/sandbox/",
+  "phonetic": "/ˈsænd.bɒks/",
   "meaning": "沙坑",
   "phrase": "We dig in the sandbox.",
   "phraseMeaning": "我们在沙坑里挖沙。",
@@ -1778,7 +1778,7 @@
  {
   "id": "w30-4",
   "word": "Seesaw",
-  "phonetic": "/seesaw/",
+  "phonetic": "/ˈsiː.sɔː/",
   "meaning": "跷跷板",
   "phrase": "I sit on the seesaw.",
   "phraseMeaning": "我坐在跷跷板上。",
@@ -1790,7 +1790,7 @@
  {
   "id": "w30-5",
   "word": "Tunnel",
-  "phonetic": "/tunnel/",
+  "phonetic": "/ˈtʌn.əl/",
   "meaning": "隧道",
   "phrase": "The tunnel is dark.",
   "phraseMeaning": "隧道里黑黑的。",
@@ -1802,7 +1802,7 @@
  {
   "id": "w31-1",
   "word": "Drum",
-  "phonetic": "/drum/",
+  "phonetic": "/drʌm/",
   "meaning": "鼓",
   "phrase": "I play the drum.",
   "phraseMeaning": "我打鼓。",
@@ -1814,7 +1814,7 @@
  {
   "id": "w31-2",
   "word": "Piano",
-  "phonetic": "/piano/",
+  "phonetic": "/piˈæn.əʊ/",
   "meaning": "钢琴",
   "phrase": "She plays the piano.",
   "phraseMeaning": "她弹钢琴。",
@@ -1826,7 +1826,7 @@
  {
   "id": "w31-3",
   "word": "Guitar",
-  "phonetic": "/guitar/",
+  "phonetic": "/ɡɪˈtɑːr/",
   "meaning": "吉他",
   "phrase": "Dad plays the guitar.",
   "phraseMeaning": "爸爸弹吉他。",
@@ -1838,7 +1838,7 @@
  {
   "id": "w31-4",
   "word": "Violin",
-  "phonetic": "/violin/",
+  "phonetic": "/ˌvaɪ.əˈlɪn/",
   "meaning": "小提琴",
   "phrase": "The violin sounds nice.",
   "phraseMeaning": "小提琴的声音很好听。",
@@ -1850,7 +1850,7 @@
  {
   "id": "w31-5",
   "word": "Flute",
-  "phonetic": "/flute/",
+  "phonetic": "/fluːt/",
   "meaning": "长笛",
   "phrase": "I blow the flute.",
   "phraseMeaning": "我吹长笛。",
@@ -1862,7 +1862,7 @@
  {
   "id": "w32-1",
   "word": "Soccer",
-  "phonetic": "/soccer/",
+  "phonetic": "/ˈsɒk.ər/",
   "meaning": "足球",
   "phrase": "We play soccer.",
   "phraseMeaning": "我们踢足球。",
@@ -1874,7 +1874,7 @@
  {
   "id": "w32-2",
   "word": "Tennis",
-  "phonetic": "/tennis/",
+  "phonetic": "/ˈten.ɪs/",
   "meaning": "网球",
   "phrase": "Let's play tennis.",
   "phraseMeaning": "我们打网球吧。",
@@ -1886,7 +1886,7 @@
  {
   "id": "w32-3",
   "word": "Baseball",
-  "phonetic": "/baseball/",
+  "phonetic": "/ˈbeɪs.bɔːl/",
   "meaning": "棒球",
   "phrase": "I like baseball.",
   "phraseMeaning": "我喜欢棒球。",
@@ -1898,7 +1898,7 @@
  {
   "id": "w32-4",
   "word": "Basketball",
-  "phonetic": "/basketball/",
+  "phonetic": "/ˈbɑː.skɪt.bɔːl/",
   "meaning": "篮球",
   "phrase": "This basketball is new.",
   "phraseMeaning": "这个篮球是新的。",
@@ -1910,7 +1910,7 @@
  {
   "id": "w32-5",
   "word": "Skateboard",
-  "phonetic": "/skateboard/",
+  "phonetic": "/ˈskeɪt.bɔːd/",
   "meaning": "滑板",
   "phrase": "I ride my skateboard.",
   "phraseMeaning": "我玩滑板。",
@@ -1922,7 +1922,7 @@
  {
   "id": "w33-1",
   "word": "Hammer",
-  "phonetic": "/hammer/",
+  "phonetic": "/ˈhæm.ər/",
   "meaning": "锤子",
   "phrase": "Dad has a hammer.",
   "phraseMeaning": "爸爸有一把锤子。",
@@ -1934,7 +1934,7 @@
  {
   "id": "w33-2",
   "word": "Scissors",
-  "phonetic": "/scissors/",
+  "phonetic": "/ˈsɪz.əz/",
   "meaning": "剪刀",
   "phrase": "These scissors are sharp.",
   "phraseMeaning": "这把剪刀很锋利。",
@@ -1946,7 +1946,7 @@
  {
   "id": "w33-3",
   "word": "Glue",
-  "phonetic": "/glue/",
+  "phonetic": "/ɡluː/",
   "meaning": "胶水",
   "phrase": "The glue is sticky.",
   "phraseMeaning": "胶水很黏。",
@@ -1958,7 +1958,7 @@
  {
   "id": "w33-4",
   "word": "Tape",
-  "phonetic": "/tape/",
+  "phonetic": "/teɪp/",
   "meaning": "胶带",
   "phrase": "This tape is long.",
   "phraseMeaning": "这卷胶带很长。",
@@ -1970,7 +1970,7 @@
  {
   "id": "w33-5",
   "word": "Crayon",
-  "phonetic": "/crayon/",
+  "phonetic": "/ˈkreɪ.ɒn/",
   "meaning": "蜡笔",
   "phrase": "I draw with a crayon.",
   "phraseMeaning": "我用蜡笔画画。",
@@ -1982,7 +1982,7 @@
  {
   "id": "w34-1",
   "word": "Computer",
-  "phonetic": "/computer/",
+  "phonetic": "/kəmˈpjuː.tər/",
   "meaning": "电脑",
   "phrase": "My computer is new.",
   "phraseMeaning": "我的电脑是新的。",
@@ -1994,7 +1994,7 @@
  {
   "id": "w34-2",
   "word": "Tablet",
-  "phonetic": "/tablet/",
+  "phonetic": "/ˈtæb.lət/",
   "meaning": "平板电脑",
   "phrase": "This tablet is small.",
   "phraseMeaning": "这台平板电脑很小。",
@@ -2006,7 +2006,7 @@
  {
   "id": "w34-3",
   "word": "Phone",
-  "phonetic": "/phone/",
+  "phonetic": "/fəʊn/",
   "meaning": "电话",
   "phrase": "Dad talks on the phone.",
   "phraseMeaning": "爸爸在打电话。",
@@ -2018,7 +2018,7 @@
  {
   "id": "w34-4",
   "word": "Camera",
-  "phonetic": "/camera/",
+  "phonetic": "/ˈkæm.rə/",
   "meaning": "相机",
   "phrase": "This camera is cool.",
   "phraseMeaning": "这个相机很酷。",
@@ -2030,7 +2030,7 @@
  {
   "id": "w34-5",
   "word": "Keyboard",
-  "phonetic": "/keyboard/",
+  "phonetic": "/ˈkiː.bɔːd/",
   "meaning": "键盘",
   "phrase": "I type on the keyboard.",
   "phraseMeaning": "我在键盘上打字。",
@@ -2042,7 +2042,7 @@
  {
   "id": "w35-1",
   "word": "Doctor",
-  "phonetic": "/doctor/",
+  "phonetic": "/ˈdɒk.tər/",
   "meaning": "医生",
   "phrase": "My uncle is a doctor.",
   "phraseMeaning": "我叔叔是医生。",
@@ -2054,7 +2054,7 @@
  {
   "id": "w35-2",
   "word": "Nurse",
-  "phonetic": "/nurse/",
+  "phonetic": "/nɜːrs/",
   "meaning": "护士",
   "phrase": "The nurse is kind.",
   "phraseMeaning": "护士很温柔。",
@@ -2066,7 +2066,7 @@
  {
   "id": "w35-3",
   "word": "Police",
-  "phonetic": "/police/",
+  "phonetic": "/pəˈliːs/",
   "meaning": "警察",
   "phrase": "The police help us.",
   "phraseMeaning": "警察帮助我们。",
@@ -2078,7 +2078,7 @@
  {
   "id": "w35-4",
   "word": "Firefighter",
-  "phonetic": "/firefighter/",
+  "phonetic": "/ˈfaɪər.faɪ.tər/",
   "meaning": "消防员",
   "phrase": "The firefighter is brave.",
   "phraseMeaning": "消防员很勇敢。",
@@ -2090,7 +2090,7 @@
  {
   "id": "w35-5",
   "word": "Driver",
-  "phonetic": "/driver/",
+  "phonetic": "/ˈdraɪ.vər/",
   "meaning": "司机",
   "phrase": "The bus driver is nice.",
   "phraseMeaning": "公交车司机人很好。",
@@ -2102,7 +2102,7 @@
  {
   "id": "w36-1",
   "word": "Planet",
-  "phonetic": "/planet/",
+  "phonetic": "/ˈplæn.ɪt/",
   "meaning": "行星",
   "phrase": "The earth is a planet.",
   "phraseMeaning": "地球是一颗行星。",
@@ -2114,7 +2114,7 @@
  {
   "id": "w36-2",
   "word": "Rocket",
-  "phonetic": "/rocket/",
+  "phonetic": "/ˈrɒk.ɪt/",
   "meaning": "火箭",
   "phrase": "The rocket flies up.",
   "phraseMeaning": "火箭飞上天。",
@@ -2126,7 +2126,7 @@
  {
   "id": "w36-3",
   "word": "Astronaut",
-  "phonetic": "/astronaut/",
+  "phonetic": "/ˈæs.trə.nɔːt/",
   "meaning": "宇航员",
   "phrase": "The astronaut is in space.",
   "phraseMeaning": "宇航员在太空中。",
@@ -2138,7 +2138,7 @@
  {
   "id": "w36-4",
   "word": "Comet",
-  "phonetic": "/comet/",
+  "phonetic": "/ˈkɒm.ɪt/",
   "meaning": "彗星",
   "phrase": "A comet has a long tail.",
   "phraseMeaning": "彗星有一条长尾巴。",
@@ -2150,7 +2150,7 @@
  {
   "id": "w36-5",
   "word": "Galaxy",
-  "phonetic": "/galaxy/",
+  "phonetic": "/ˈɡæl.ək.si/",
   "meaning": "银河",
   "phrase": "The galaxy is huge.",
   "phraseMeaning": "银河非常大。",
@@ -2162,7 +2162,7 @@
  {
   "id": "w37-1",
   "word": "Morning",
-  "phonetic": "/morning/",
+  "phonetic": "/ˈmɔː.nɪŋ/",
   "meaning": "早晨",
   "phrase": "Good morning, Mom!",
   "phraseMeaning": "妈妈早上好！",
@@ -2174,7 +2174,7 @@
  {
   "id": "w37-2",
   "word": "Night",
-  "phonetic": "/night/",
+  "phonetic": "/naɪt/",
   "meaning": "夜晚",
   "phrase": "Good night, Dad!",
   "phraseMeaning": "爸爸晚安！",
@@ -2186,7 +2186,7 @@
  {
   "id": "w37-3",
   "word": "Today",
-  "phonetic": "/today/",
+  "phonetic": "/təˈdeɪ/",
   "meaning": "今天",
   "phrase": "It is sunny today.",
   "phraseMeaning": "今天阳光很好。",
@@ -2198,7 +2198,7 @@
  {
   "id": "w37-4",
   "word": "Tomorrow",
-  "phonetic": "/tomorrow/",
+  "phonetic": "/təˈmɒr.əʊ/",
   "meaning": "明天",
   "phrase": "See you tomorrow!",
   "phraseMeaning": "明天见！",
@@ -2210,7 +2210,7 @@
  {
   "id": "w37-5",
   "word": "Yesterday",
-  "phonetic": "/yesterday/",
+  "phonetic": "/ˈjes.tə.deɪ/",
   "meaning": "昨天",
   "phrase": "Yesterday was my birthday.",
   "phraseMeaning": "昨天是我的生日。",
@@ -2222,7 +2222,7 @@
  {
   "id": "w38-1",
   "word": "Big",
-  "phonetic": "/big/",
+  "phonetic": "/bɪɡ/",
   "meaning": "大的",
   "phrase": "The ball is big.",
   "phraseMeaning": "球很大。",
@@ -2234,7 +2234,7 @@
  {
   "id": "w38-2",
   "word": "Small",
-  "phonetic": "/small/",
+  "phonetic": "/smɔːl/",
   "meaning": "小的",
   "phrase": "The mouse is small.",
   "phraseMeaning": "老鼠很小。",
@@ -2246,7 +2246,7 @@
  {
   "id": "w38-3",
   "word": "Hot",
-  "phonetic": "/hot/",
+  "phonetic": "/hɒt/",
   "meaning": "热的",
   "phrase": "This tea is hot.",
   "phraseMeaning": "这杯茶很烫。",
@@ -2258,7 +2258,7 @@
  {
   "id": "w38-4",
   "word": "Cold",
-  "phonetic": "/cold/",
+  "phonetic": "/kəʊld/",
   "meaning": "冷的",
   "phrase": "The ice is cold.",
   "phraseMeaning": "冰很冷。",
@@ -2270,7 +2270,7 @@
  {
   "id": "w38-5",
   "word": "Fast",
-  "phonetic": "/fast/",
+  "phonetic": "/fɑːst/",
   "meaning": "快的",
   "phrase": "The rabbit is fast.",
   "phraseMeaning": "兔子跑得快。",
@@ -2282,7 +2282,7 @@
  {
   "id": "w39-1",
   "word": "Mouse",
-  "phonetic": "/mouse/",
+  "phonetic": "/maʊs/",
   "meaning": "老鼠",
   "phrase": "The mouse likes cheese.",
   "phraseMeaning": "老鼠喜欢奶酪。",
@@ -2294,7 +2294,7 @@
  {
   "id": "w39-2",
   "word": "Hamster",
-  "phonetic": "/hamster/",
+  "phonetic": "/ˈhæm.stər/",
   "meaning": "仓鼠",
   "phrase": "My hamster eats seeds.",
   "phraseMeaning": "我的仓鼠吃种子。",
@@ -2306,7 +2306,7 @@
  {
   "id": "w39-3",
   "word": "Parrot",
-  "phonetic": "/parrot/",
+  "phonetic": "/ˈpær.ət/",
   "meaning": "鹦鹉",
   "phrase": "The parrot can talk.",
   "phraseMeaning": "鹦鹉会说话。",
@@ -2318,7 +2318,7 @@
  {
   "id": "w39-4",
   "word": "Goat",
-  "phonetic": "/goat/",
+  "phonetic": "/ɡəʊt/",
   "meaning": "山羊",
   "phrase": "The goat eats grass.",
   "phraseMeaning": "山羊吃草。",
@@ -2330,7 +2330,7 @@
  {
   "id": "w39-5",
   "word": "Deer",
-  "phonetic": "/deer/",
+  "phonetic": "/dɪər/",
   "meaning": "鹿",
   "phrase": "The deer runs fast.",
   "phraseMeaning": "鹿跑得很快。",
@@ -2342,7 +2342,7 @@
  {
   "id": "w40-1",
   "word": "River",
-  "phonetic": "/river/",
+  "phonetic": "/ˈrɪv.ər/",
   "meaning": "河流",
   "phrase": "The river is long.",
   "phraseMeaning": "河流很长。",
@@ -2354,7 +2354,7 @@
  {
   "id": "w40-2",
   "word": "Mountain",
-  "phonetic": "/mountain/",
+  "phonetic": "/ˈmaʊn.tɪn/",
   "meaning": "山",
   "phrase": "The mountain is high.",
   "phraseMeaning": "山很高。",
@@ -2366,7 +2366,7 @@
  {
   "id": "w40-3",
   "word": "Beach",
-  "phonetic": "/beach/",
+  "phonetic": "/biːtʃ/",
   "meaning": "海滩",
   "phrase": "We play on the beach.",
   "phraseMeaning": "我们在海滩上玩。",
@@ -2378,7 +2378,7 @@
  {
   "id": "w40-4",
   "word": "Forest",
-  "phonetic": "/forest/",
+  "phonetic": "/ˈfɒr.ɪst/",
   "meaning": "森林",
   "phrase": "The forest is green.",
   "phraseMeaning": "森林绿油油的。",
@@ -2390,7 +2390,7 @@
  {
   "id": "w40-5",
   "word": "Island",
-  "phonetic": "/island/",
+  "phonetic": "/ˈaɪ.lənd/",
   "meaning": "岛屿",
   "phrase": "This island is small.",
   "phraseMeaning": "这个小岛很小。",

@@ -82,7 +82,7 @@
         <text class="rank {{item.rank <= 3 ? 'top' : ''}}">{{item.rank <= 3 ? ['🥇','🥈','🥉'][item.rank-1] : item.rank}}</text>
         <view class="board-info">
           <text class="board-name">{{item.name}}{{item.isMe ? '（我）' : ''}}</text>
-          <text class="board-sub">第 {{item.week}} 天 · 连续 {{item.streak}} 天</text>
+          <text class="board-sub">{{item.gradeName ? item.gradeName + ' · ' : ''}}第 {{item.week}} 天 · 连续 {{item.streak}} 天</text>
         </view>
         <text class="board-count">{{item.learned}} 词</text>
         <!-- 挑战按钮：只有别人的行才有（自己的行不给「挑战自己」） -->

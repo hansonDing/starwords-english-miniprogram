@@ -3,7 +3,7 @@
   <view class="stats-grid">
     <view class="card stat">
       <text class="stat-num">{{currentWeek}}</text>
-      <text class="stat-label">当前第几天 / 共 {{maxWeek}} 天</text>
+      <text class="stat-label">学习天数</text>
     </view>
     <view class="card stat">
       <text class="stat-num">{{learnedCount}}</text>
@@ -19,13 +19,25 @@
     </view>
   </view>
 
-  <!-- 学习旅程 -->
+  <!-- 学习旅程：全局进度 + 按年级分段 -->
   <view class="card journey">
     <text class="title">学习旅程</text>
     <view class="journey-bar">
       <view class="journey-fill" style="width: {{journeyPercent}}%"></view>
     </view>
-    <text class="subtitle">已完成 {{journeyPercent}}%，每天 5 个新单词，共 40 天</text>
+    <text class="subtitle">已完成 {{journeyPercent}}%，每天 5 个新单词</text>
+
+    <view class="grade-rows">
+      <view class="grade-row {{item.state}}" wx:for="{{gradeSegments}}" wx:key="id">
+        <view class="grade-row-head">
+          <text class="grade-row-name">{{item.state === 'locked' ? '🔒 ' : ''}}{{item.name}}</text>
+          <text class="grade-row-status">{{item.statusText}}</text>
+        </view>
+        <view class="grade-row-bar">
+          <view class="grade-row-fill" style="width: {{item.percent}}%"></view>
+        </view>
+      </view>
+    </view>
   </view>
 
   <!-- 成就墙 -->

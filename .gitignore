@@ -8,6 +8,9 @@ __pycache__
 *.pyc
 _tmp_phrase
 words.json.tmp
+# 音频包化的源素材（400 个原始 mp3，约 1.1MB）：进仓库体积不划算，
+# 需要时用 gen-audio.py / gen-phrase-audio.py 重新生成即可
+_audio_src_backup
 
 # 编辑器 / 系统
 .DS_Store

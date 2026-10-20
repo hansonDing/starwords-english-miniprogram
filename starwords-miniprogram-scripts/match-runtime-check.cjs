@@ -44,11 +44,11 @@ function sleep(ms) {
 }
 
 const WORDS5 = [
-  { id: 'w1-1', word: 'Apple', meaning: '苹果', audio: '../../assets/audio/w1-1.mp3' },
-  { id: 'w1-2', word: 'Banana', meaning: '香蕉', audio: '../../assets/audio/w1-2.mp3' },
-  { id: 'w1-3', word: 'Orange', meaning: '橙子', audio: '../../assets/audio/w1-3.mp3' },
-  { id: 'w1-4', word: 'Grape', meaning: '葡萄', audio: '../../assets/audio/w1-4.mp3' },
-  { id: 'w1-5', word: 'Watermelon', meaning: '西瓜', audio: '../../assets/audio/w1-5.mp3' },
+  { id: 'w1-1', word: 'Apple', meaning: '苹果', audio: '../../assets/audio/w1-1.mp3', imgTx: 0, imgTy: 0 },
+  { id: 'w1-2', word: 'Banana', meaning: '香蕉', audio: '../../assets/audio/w1-2.mp3', imgTx: -6.25, imgTy: -7.69 },
+  { id: 'w1-3', word: 'Orange', meaning: '橙子', audio: '../../assets/audio/w1-3.mp3', imgTx: -12.5, imgTy: -15.38 },
+  { id: 'w1-4', word: 'Grape', meaning: '葡萄', audio: '../../assets/audio/w1-4.mp3', imgTx: -18.75, imgTy: -23.07 },
+  { id: 'w1-5', word: 'Watermelon', meaning: '西瓜', audio: '../../assets/audio/w1-5.mp3', imgTx: -25, imgTy: -30.76 },
 ];
 
 /* ---------- 0. 在沙箱里执行真实 learn.js，拿到 Page 定义 ---------- */
@@ -64,9 +64,13 @@ let vibrateCalls = 0;
 const daySettled = [];
 // 星星结算调用记录（learn.js 每学完一个词会调 store.creditStars）
 const starCredits = [];
+// learn.js 里挂过的定时器总数（结算页必须一个都不挂）
+let timersCreated = 0;
 
 // onLoad 会读 store.getProgress() 决定从第几个词开始，所以这必须是可替换的桩
 let progressStub = { currentWeek: 1, words: [] };
+// 本自检的世界只有「一年级 = 单元 1」这一格（getWeekWords 恒返回 WORDS5）
+const GRADE_G1 = { id: 'g1', name: '一年级', firstUnit: 1, lastUnit: 40 };
 
 const stubs = {
   '../../utils/words': { getWeekWords: function () { return WORDS5; }, WORDS: WORDS5, WORDS_PER_WEEK: 5, MAX_WEEK: 40 },
@@ -80,6 +84,26 @@ const stubs = {
     completeDailySession: function (a, b) { daySettled.push(b); },
     syncToCloud: function () {},
     ACHIEVEMENTS: [],
+    // ---- 年级接口（语义忠实的最小实现：单元 1 的 5 个词全学过 → 没有下一单元）----
+    currentGrade: function () { return GRADE_G1; },
+    nextUnitInGrade: function () {
+      const learned = (progressStub.words || []).filter(function (w) { return w && w.learned; }).length;
+      return learned >= WORDS5.length ? null : 1;
+    },
+    gradeStats: function () {
+      const learned = (progressStub.words || []).filter(function (w) { return w && w.learned; }).length;
+      const n = Math.min(learned, WORDS5.length);
+      return {
+        total: WORDS5.length,
+        learned: n,
+        percent: Math.round((n / WORDS5.length) * 100),
+        completed: n >= WORDS5.length,
+        available: true,
+      };
+    },
+    currentGradeMaxUnit: function () { return 1; },
+    // 本桩世界只有一年级一格 → 永远没有「下一级」可前移
+    advanceGrade: function () { return null; },
   },
   '../../utils/scheduler': { localToday: function () { return '2026-10-15'; } },
   '../../utils/audio': {
@@ -94,7 +118,12 @@ const stubs = {
 
 const sandbox = {
   console: console,
-  setTimeout: setTimeout,
+  // 记录 learn.js 挂过的定时器：结算页**一秒钟都不该等**，
+  // 这个计数用来证明「庆祝动画」真的删干净了（否则会残留 2600/5400ms 的 setTimeout）。
+  setTimeout: function (fn, ms) {
+    timersCreated++;
+    return setTimeout(fn, ms);
+  },
   clearTimeout: clearTimeout,
   require: function (id) {
     return Object.prototype.hasOwnProperty.call(stubs, id) ? stubs[id] : {};
@@ -138,8 +167,6 @@ function makePage() {
   inst.wordScores = {};
   inst.matchTimer = null;
   inst.matchWords = [];
-  inst.rewardStage = 0;
-  inst.rewardTimers = [];
   return inst;
 }
 const tap = function (id) {
@@ -259,13 +286,22 @@ const find = function (arr, id) {
     p3.onPickMatchRight(tap(WORDS5[i].id));
   }
   check(p3.data.matchSolved === 5, '5 组全部配对（matchSolved=5）');
-  check(p3.data.matchAllDone === true, 'matchAllDone 置真 → 界面出现「看奖励动画」');
+  check(p3.data.matchAllDone === true, 'matchAllDone 置真 → 界面出现「完成啦 ✓」按钮');
   check(vibrateCalls === v0 + 1, '全部完成时轻震动一次');
 
+  const timersBefore = timersCreated;
   p3.onMatchFinish();
-  check(p3.data.phase === 'celebrate', 'onMatchFinish 接进庆祝三幕');
-  check(p3.data.rewardStage === 1, '奖励动画第 1 幕已启动');
-  p3.clearRewardTimers();
+  check(p3.data.phase === 'done', 'onMatchFinish 进静态结算页');
+  check(
+    Array.isArray(p3.data.doneWords) && p3.data.doneWords.length === 5,
+    '结算页带上当天 5 个单词（实际 ' + (p3.data.doneWords || []).length + '）'
+  );
+  check(
+    p3.data.doneWords.every(function (w) { return !!w.word && !!w.meaning && typeof w.imgTx === 'number'; }),
+    '每条都带 word / meaning / 取图坐标（静态列表直接渲染）'
+  );
+  check(timersCreated === timersBefore, '★结算不挂任何定时器（庆祝动画确实删干净了，不用等 5 秒）');
+  check(p3.data.rewardStage === undefined, 'data 里已没有 rewardStage');
 
   /* ---------- 6. 配对只出现一次 ---------- */
   console.log('[6] 第 5 个词之后的流程接入');
@@ -277,8 +313,8 @@ const find = function (arr, id) {
   const d0 = daySettled.length;
   p4.onNextWord();
   check(daySettled.length === d0 + 1, '日会话在进配对**之前**就结算（中途退出不丢当天进度）');
-  check(p4.data.step === 4, '第 5 个词测完后进入第 4 步（配对），而不是直接庆祝');
-  check(p4.data.phase === 'learning', '此时还没进 celebrate');
+  check(p4.data.step === 4, '第 5 个词测完后进入第 4 步（配对），而不是直接结算');
+  check(p4.data.phase === 'learning', '此时还没进结算页');
   check(p4.data.maxStep === 4, '步数上限切到 4（标签显示 第 4/4 步）');
   check(p4.data.matchLeft.length === 5, '配对题目已生成');
   check(p4.matchPlayed === true, 'matchPlayed 已置位（防止重复出现）');
@@ -294,9 +330,12 @@ const find = function (arr, id) {
   p5.data.weekWordsView = WORDS5.map(function (w) { return { id: w.id, learned: false }; });
   p5.matchPlayed = true;
   p5.onNextWord();
-  check(p5.data.phase === 'celebrate', '已玩过配对时，直接进庆祝（不会出现第二次）');
+  check(p5.data.phase === 'done', '已玩过配对时，直接进结算（不会出现第二次）');
   check(p5.data.step === 1, '不会退回配对步骤');
-  p5.clearRewardTimers();
+  check(
+    Array.isArray(p5.data.doneWords) && p5.data.doneWords.length === 5,
+    '兜底分支同样带上 5 个单词'
+  );
 
   /* ---------- 7. 步数上限随词推进切换 ---------- */
   console.log('[7] 步数上限 maxStep');

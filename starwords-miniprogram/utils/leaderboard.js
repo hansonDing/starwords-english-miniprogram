@@ -46,6 +46,8 @@ function buildRow(uid) {
     learned_count: learned,
     streak_days: p.streakDays || 0,
     current_week: p.currentWeek || 1,
+    // 年级 id（可空列，老数据不受影响）。榜单仍按已学词数排序。
+    grade_id: store.currentGrade().id,
     stars: learned,
     updated_at: new Date().toISOString(),
   }

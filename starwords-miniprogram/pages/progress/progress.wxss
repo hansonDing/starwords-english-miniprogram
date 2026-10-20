@@ -48,6 +48,68 @@
   border-radius: 10rpx;
 }
 
+/* ---------- 年级分段进度 ---------- */
+.grade-rows {
+  margin-top: 28rpx;
+}
+
+.grade-row {
+  margin-top: 20rpx;
+}
+
+.grade-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.grade-row-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.grade-row-status {
+  font-size: 24rpx;
+  color: #6b7280;
+}
+
+.grade-row-bar {
+  height: 12rpx;
+  background: #ede9fe;
+  border-radius: 8rpx;
+  overflow: hidden;
+  margin-top: 10rpx;
+}
+
+.grade-row-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6d59eb, #9b8af4);
+  border-radius: 8rpx;
+}
+
+.grade-row.active .grade-row-name,
+.grade-row.active .grade-row-status {
+  color: #6d59eb;
+}
+
+.grade-row.done .grade-row-status {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.grade-row.done .grade-row-fill {
+  background: linear-gradient(90deg, #10b981, #6ee7b7);
+}
+
+.grade-row.locked {
+  opacity: 0.55;
+}
+
+.grade-row.locked .grade-row-fill {
+  background: #d1d5db;
+}
+
 .achv-card {
   margin-bottom: 32rpx;
 }

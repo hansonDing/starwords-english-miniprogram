@@ -65,6 +65,8 @@ function makeStore(storage) {
       if (id === './avatar') return realAvatar;
       // cloud 桩掉：store 会退化成纯本地（getSession 直接 resolve(null)）
       if (id === './cloud') return { cloud: null, cloudError: '', available: false };
+      // 年级功能之后 store 也依赖词库（gradeOfWeek / getWeekWords）—— 纯数据，直接加载真实文件
+      if (id === './words') return loadCjs(path.join(ROOT, 'utils', 'words.js'));
       throw new Error('stars-check: 未预期的 require → ' + id);
     },
     // 云同步用 setTimeout 防抖：换成空实现，避免测试进程被挂起的定时器拖住

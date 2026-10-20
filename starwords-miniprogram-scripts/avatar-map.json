@@ -1,5 +1,5 @@
 {
- "cols": 6,
+ "cols": 4,
  "rows": 2,
  "cell": 192,
  "list": [
@@ -13,36 +13,22 @@
   {
    "id": "boy-2",
    "gender": "boy",
-   "name": "足球星",
+   "name": "短袖T恤",
    "col": 1,
    "row": 0
   },
   {
    "id": "boy-3",
    "gender": "boy",
-   "name": "小超人",
+   "name": "背带裤",
    "col": 2,
    "row": 0
   },
   {
    "id": "boy-4",
    "gender": "boy",
-   "name": "音乐星",
+   "name": "小超人",
    "col": 3,
-   "row": 0
-  },
-  {
-   "id": "boy-5",
-   "gender": "boy",
-   "name": "书包星",
-   "col": 4,
-   "row": 0
-  },
-  {
-   "id": "boy-6",
-   "gender": "boy",
-   "name": "天线星",
-   "col": 5,
    "row": 0
   },
   {
@@ -55,36 +41,22 @@
   {
    "id": "girl-2",
    "gender": "girl",
-   "name": "魔法星",
+   "name": "双马尾",
    "col": 1,
    "row": 1
   },
   {
    "id": "girl-3",
    "gender": "girl",
-   "name": "花仙子",
+   "name": "花裙子",
    "col": 2,
    "row": 1
   },
   {
    "id": "girl-4",
    "gender": "girl",
-   "name": "小挎包",
+   "name": "草帽",
    "col": 3,
-   "row": 1
-  },
-  {
-   "id": "girl-5",
-   "gender": "girl",
-   "name": "草帽星",
-   "col": 4,
-   "row": 1
-  },
-  {
-   "id": "girl-6",
-   "gender": "girl",
-   "name": "围巾星",
-   "col": 5,
    "row": 1
   }
  ]

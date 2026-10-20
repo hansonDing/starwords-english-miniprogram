@@ -2,18 +2,18 @@
 //
 // 精灵图取图约定（与单词图完全一致）：
 //   <view class="avatar-clip">            ← 外层裁切：position:relative + overflow:hidden
-//     <image class="avatar-img" ...>      ← 内层整图位移：宽 600%、高 200%
+//     <image class="avatar-img" ...>      ← 内层整图位移：宽 400%、高 200%
 //   tx = -100 / cols * col ，ty = -100 / rows * row
 //   （百分比相对**内层图自身**尺寸，所以位移量要除以列数/行数）
 //
 // ⚠️ 三处必须同时改，否则真机取图错位且零报错：
 //     · 本文件 SPRITE
 //     · starwords-miniprogram-scripts/gen-avatars.py（生成器）
-//     · starwords-miniprogram/app.wxss 里 .avatar-img 的 600% / 200%
+//     · starwords-miniprogram/app.wxss 里 .avatar-img 的 400% / 200%
 //   check-static [4m] 会拦。
 
-// 6 列 × 2 行：第 0 行男孩（boy-1..6），第 1 行女孩（girl-1..6）
-const SPRITE = { cols: 6, rows: 2, cell: 192, src: '../../assets/avatars.png' };
+// 4 列 × 2 行：第 0 行男孩（boy-1..4），第 1 行女孩（girl-1..4）
+const SPRITE = { cols: 4, rows: 2, cell: 192, src: '../../assets/avatars.png' };
 
 const GENDERS = [
   { id: 'boy', name: '男孩' },
@@ -22,22 +22,18 @@ const GENDERS = [
 
 const DEFAULT_ID = 'boy-1';
 
-// 12 个形象。顺序 = 精灵图落位顺序（左到右、上到下）：
-// 第 i 个形象在第 (i % 6) 列、第 floor(i / 6) 行。
+// 8 个拟人卡通形象。顺序 = 精灵图落位顺序（左到右、上到下）：
+// 第 i 个形象在第 (i % 4) 列、第 floor(i / 4) 行。
 // id / 名称必须与 starwords-miniprogram-scripts/avatar-map.json 完全一致（check-static [4m] 比对）。
 const LIST = [
   { id: 'boy-1', gender: 'boy', name: '棒球帽', col: 0, row: 0 },
-  { id: 'boy-2', gender: 'boy', name: '足球星', col: 1, row: 0 },
-  { id: 'boy-3', gender: 'boy', name: '小超人', col: 2, row: 0 },
-  { id: 'boy-4', gender: 'boy', name: '音乐星', col: 3, row: 0 },
-  { id: 'boy-5', gender: 'boy', name: '书包星', col: 4, row: 0 },
-  { id: 'boy-6', gender: 'boy', name: '天线星', col: 5, row: 0 },
+  { id: 'boy-2', gender: 'boy', name: '短袖T恤', col: 1, row: 0 },
+  { id: 'boy-3', gender: 'boy', name: '背带裤', col: 2, row: 0 },
+  { id: 'boy-4', gender: 'boy', name: '小超人', col: 3, row: 0 },
   { id: 'girl-1', gender: 'girl', name: '蝴蝶结', col: 0, row: 1 },
-  { id: 'girl-2', gender: 'girl', name: '魔法星', col: 1, row: 1 },
-  { id: 'girl-3', gender: 'girl', name: '花仙子', col: 2, row: 1 },
-  { id: 'girl-4', gender: 'girl', name: '小挎包', col: 3, row: 1 },
-  { id: 'girl-5', gender: 'girl', name: '草帽星', col: 4, row: 1 },
-  { id: 'girl-6', gender: 'girl', name: '围巾星', col: 5, row: 1 },
+  { id: 'girl-2', gender: 'girl', name: '双马尾', col: 1, row: 1 },
+  { id: 'girl-3', gender: 'girl', name: '花裙子', col: 2, row: 1 },
+  { id: 'girl-4', gender: 'girl', name: '草帽', col: 3, row: 1 },
 ];
 
 /** 按 id 查形象；查不到返回 null（**不兜底**，需要兜底请用 tileOf） */
@@ -54,13 +50,33 @@ function listByGender(gender) {
   return LIST.filter((x) => x.gender === gender);
 }
 
-/** 把任意脏数据归一成合法 id（非法 → 默认形象） */
-function normalizeId(id) {
+/**
+ * 老存档里的形象 id 迁移。
+ *
+ * 形象曾经是「每性别 6 个」，现在只有 4 个 —— 存着 girl-5 / girl-6 的孩子
+ * 如果被直接兜底成默认形象（男孩），就是「我女儿突然变成男孩」，静默又刺眼。
+ * 所以：形式是 `<性别>-<序号>` 但序号已下线 → 迁移到**同性别第 1 个**。
+ *
+ * 完全不是形象 id → 返回 ''（由调用方决定是清空还是兜底默认）。
+ */
+function migrateId(id) {
+  if (typeof id !== 'string' || !id) return '';
   const item = findById(id);
-  return item ? item.id : DEFAULT_ID;
+  if (item) return item.id; // 还在册 → 原样返回
+  const m = /^(boy|girl)-\d+$/.exec(id);
+  if (!m) return '';
+  const list = listByGender(m[1]);
+  return list.length ? list[0].id : '';
 }
 
-/** 取图坐标（百分比，已按 6×2 算好）：返回数字，WXML 里直接 translate({{tx}}%, {{ty}}%) */
+/** 把任意脏数据归一成合法 id（合法 → 原样；老 id → 同性别第 1 个；其余 → 默认形象） */
+function normalizeId(id) {
+  const item = findById(id);
+  if (item) return item.id;
+  return migrateId(id) || DEFAULT_ID;
+}
+
+/** 取图坐标（百分比，已按 4×2 算好）：返回数字，WXML 里直接 translate({{tx}}%, {{ty}}%) */
 function coordsOf(item) {
   return {
     tx: Math.round((-100 / SPRITE.cols) * item.col * 100) / 100,
@@ -73,7 +89,7 @@ function coordsOf(item) {
  * **永不返回 null** —— 脏数据一律兜底成默认形象。页面靠这条保证形象不会空白。
  */
 function tileOf(id) {
-  const item = findById(id) || findById(DEFAULT_ID);
+  const item = findById(normalizeId(id));
   const c = coordsOf(item);
   return {
     id: item.id,
@@ -97,6 +113,7 @@ module.exports = {
   DEFAULT_ID,
   findById,
   listByGender,
+  migrateId,
   normalizeId,
   coordsOf,
   tileOf,

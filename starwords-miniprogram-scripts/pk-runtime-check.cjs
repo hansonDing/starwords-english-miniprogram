@@ -104,6 +104,8 @@ function makeRealStore(storage) {
       if (id === './scheduler') return realScheduler;
       if (id === './avatar') return realAvatar;
       if (id === './cloud') return { cloud: null, cloudError: '', available: false };
+      // 年级功能之后 store 也依赖词库（gradeOfWeek / getWeekWords）—— 纯数据，直接加载真实文件
+      if (id === './words') return loadCjs(path.join(ROOT, 'utils', 'words.js'));
       throw new Error('pk-runtime-check: store 未预期的 require → ' + id);
     },
     // 云同步防抖的定时器：回空实现，避免挂起的定时器拖住测试进程

@@ -1,0 +1,29 @@
+<view class="page">
+  <!-- 顶部汇总：全局进度 -->
+  <view class="card sum-card">
+    <text class="sum-title">📚 单词学习</text>
+    <text class="sum-sub">已学 {{totalLearned}} / {{totalWords}} 词</text>
+    <view class="bar"><view class="bar-fill" style="width: {{totalPercent}}%"></view></view>
+  </view>
+
+  <!-- 年级卡片：点一下就切过去（跨级会弹家长确认） -->
+  <view class="grade-list">
+    <view
+      class="grade-card {{item.state}}"
+      wx:for="{{grades}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="onPickGrade"
+    >
+      <view class="grade-head">
+        <text class="grade-name">{{item.state === 'locked' ? '🔒 ' : ''}}{{item.name}}</text>
+        <text class="grade-status">{{item.statusText}}</text>
+      </view>
+      <view class="bar"><view class="bar-fill" style="width: {{item.percent}}%"></view></view>
+      <text class="grade-meta">已学 {{item.learned}} / {{item.total}} 词</text>
+    </view>
+  </view>
+
+  <view class="btn-primary" bindtap="onGoLearn"><text>开始学习</text></view>
+  <text class="foot-note">切换年级不会影响已经学过的单词，随时可以切回来</text>
+</view>

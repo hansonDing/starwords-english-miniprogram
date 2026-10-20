@@ -36,7 +36,7 @@
     </view>
   </block>
 
-  <!-- 第 2 步：从该性别的 6 个形象里挑 -->
+  <!-- 第 2 步：从该性别的 4 个形象里挑 -->
   <block wx:else>
     <view class="grid">
       <view

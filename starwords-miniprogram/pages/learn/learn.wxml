@@ -155,46 +155,29 @@
 
     <view class="match-done-bar" wx:if="{{matchAllDone}}">
       <text class="match-done-text">全部配对成功！</text>
-      <view class="btn-primary match-next-btn" bindtap="onMatchFinish"><text>看奖励动画 🎉</text></view>
+      <view class="btn-primary match-next-btn" bindtap="onMatchFinish"><text>完成啦 ✓</text></view>
     </view>
   </view>
 </block>
 
-<!-- ============ 奖励动画片 ============ -->
-<view class="celebrate" wx:if="{{phase === 'celebrate'}}">
-  <view class="skip-btn" wx:if="{{rewardStage < 3}}" bindtap="onSkipReward"><text>跳过 ▸</text></view>
+<!-- ============ 结算页（静态，零动画） ============ -->
+<view class="done-page" wx:if="{{phase === 'done'}}">
+  <text class="done-emoji">🎉</text>
+  <!-- 没有当天词卡 = 进来时本年级就已经没新词可学了（整个年级学完 / 该年级还没上线） -->
+  <text class="done-title">{{doneWords.length ? '太棒了！今天的单词全部学会！' : gradeNote}}</text>
+  <text class="done-sub">{{doneWords.length ? (gradeNote || '明天会解锁新的 5 个单词哦') : '更多年级的单词正在路上'}}</text>
 
-  <!-- 舞台：彩带 + 角色 -->
-  <view class="stage">
-    <text
-      class="confetti-item"
-      wx:for="{{confetti}}"
-      wx:key="id"
-      style="left:{{item.left}}%;animation-delay:{{item.delay}}s;animation-duration:{{item.dur}}s;font-size:{{item.size}}rpx"
-    >{{item.icon}}</text>
-
-    <view class="mascot-wrap">
-      <text class="mascot {{rewardStage >= 1 ? 'pop' : ''}} {{rewardStage >= 2 ? 'dance' : ''}}">⭐</text>
-      <text class="mascot-friend f1 {{rewardStage >= 2 ? 'pop' : ''}}">🐻</text>
-      <text class="mascot-friend f2 {{rewardStage >= 2 ? 'pop' : ''}}">🐰</text>
-      <text class="mascot-friend f3 {{rewardStage >= 2 ? 'pop' : ''}}">🐼</text>
-    </view>
-
-    <view class="bubble {{rewardStage >= 2 ? 'show' : ''}}">
-      <text>今天 5 个单词全学会啦！</text>
-    </view>
+  <!-- 本次跟读攒下的星星（计入「我的」页的账户总数） -->
+  <view class="done-stars" wx:if="{{earnedStars > 0}}">
+    <text class="done-stars-icon">⭐</text>
+    <text class="done-stars-text">本次攒下 {{earnedStars}} 颗星</text>
   </view>
 
-  <!-- 第三幕：单词巡游 -->
-  <view class="parade" wx:if="{{rewardStage >= 3}}">
-    <text class="parade-title">🎬 今天学会的单词</text>
-    <view
-      class="parade-item"
-      wx:for="{{rewardWords}}"
-      wx:key="id"
-      style="animation-delay:{{index * 0.18}}s"
-    >
-      <view class="parade-img sprite">
+  <!-- 今天学会的单词：静态清单 -->
+  <view class="done-words" wx:if="{{doneWords.length > 0}}">
+    <text class="done-words-title">今天学会的单词</text>
+    <view class="done-word" wx:for="{{doneWords}}" wx:key="id">
+      <view class="done-word-img sprite">
         <image
           class="sprite-img"
           src="../../assets/sprite.jpg"
@@ -202,35 +185,23 @@
           style="transform: translate({{item.imgTx}}%, {{item.imgTy}}%)"
         />
       </view>
-      <view class="parade-text">
-        <text class="parade-word">{{item.word}}</text>
-        <text class="parade-meaning">{{item.meaning}}</text>
+      <view class="done-word-text">
+        <text class="done-word-en">{{item.word}}</text>
+        <text class="done-word-cn">{{item.meaning}}</text>
       </view>
-      <text class="parade-star">⭐</text>
     </view>
   </view>
 
-  <block wx:if="{{rewardStage >= 3}}">
-    <text class="celebrate-title">太棒了！今天的单词全部学会！</text>
-    <text class="celebrate-sub">明天会解锁新的 5 个单词哦</text>
-
-    <!-- 本次跟读攒下的星星（计入「我的」页的账户总数） -->
-    <view class="celebrate-stars" wx:if="{{earnedStars > 0}}">
-      <text class="celebrate-stars-icon">⭐</text>
-      <text class="celebrate-stars-text">本次攒下 {{earnedStars}} 颗星</text>
-    </view>
-
-    <view class="achv-list" wx:if="{{newAchievements.length > 0}}">
-      <text class="achv-head">获得新成就</text>
-      <view class="achv-item" wx:for="{{newAchievements}}" wx:key="id">
-        <text class="achv-icon">{{item.icon}}</text>
-        <view class="achv-info">
-          <text class="achv-name">{{item.name}}</text>
-          <text class="achv-desc">{{item.description}}</text>
-        </view>
+  <view class="achv-list" wx:if="{{newAchievements.length > 0}}">
+    <text class="achv-head">获得新成就</text>
+    <view class="achv-item" wx:for="{{newAchievements}}" wx:key="id">
+      <text class="achv-icon">{{item.icon}}</text>
+      <view class="achv-info">
+        <text class="achv-name">{{item.name}}</text>
+        <text class="achv-desc">{{item.description}}</text>
       </view>
     </view>
+  </view>
 
-    <view class="btn-primary back-btn" bindtap="onBackHome"><text>回首页</text></view>
-  </block>
+  <view class="btn-primary back-btn" bindtap="onBackHome"><text>回首页</text></view>
 </view>

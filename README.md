@@ -9,20 +9,22 @@
 ```
 starwords-miniprogram/            小程序本体
 ├── app.js / app.json / app.wxss
-├── pages/                        7 个页面
+├── pages/                        8 个页面
 │   ├── index/     首页（第 N 天、今天的动画）
-│   ├── learn/     学习三步：听一听 → 跟读 → 小测验
+│   ├── learn/     学习三步：听一听 → 跟读 → 小测验 → 配对闯关
 │   ├── review/    复习
 │   ├── progress/  进度 + 星星图
+│   ├── grades/    年级选择（一年级 ~ 九年级；跳级需家长确认）
 │   ├── mine/      我的（昵称、排行榜）
 │   ├── video/     每日动画（7 天日程）
 │   └── admin/     家长后台（上传动画、绑定家长账号）
 ├── utils/                        业务逻辑
-│   ├── store.js          进度存取（本地 + 云端同步）
+│   ├── store.js          进度存取（本地 + 云端同步）+ 年级划分与指针推导
 │   ├── cloud.js          云服务封装
 │   ├── config.js         云服务公开配置
-│   ├── words.js          词库（由脚本生成）
-│   ├── audio.js          音频播放（真机 / 模拟器路径降级）
+│   ├── words.js          词库（由脚本生成，含 GRADES 年级区间表）
+│   ├── audio.js          音频播放（周包分段定位；真机 / 模拟器路径降级）
+│   ├── audioPackMap.js   音频周包段表（由脚本生成）
 │   ├── record-score.js   跟读评分（WAV 本地解析）
 │   ├── leaderboard.js    排行榜
 │   ├── dailyVideo.js     每日动画（签名地址 / 上传 / 清单）
@@ -45,13 +47,37 @@ wordData.ts ──extract-words.mjs──► words.json ──gen-words-js.mjs�
 
 只拿这个小程序仓库**可以直接运行**（音频、图片、词库都已提交），但**改单词 / 例句要回网页版仓库一起改**，再跑一遍上面的管线并重生成对应音频。
 
+### 年级划分
+
+`starwords-miniprogram-scripts/grade-plan.json` 是**年级区间的唯一可编辑源头**：
+
+| 年级 | id | 单元范围 | 词数 |
+|---|---|---|---|
+| 一年级 | g1 | 1–40 | 200（= 现有内容，零迁移） |
+| 二年级 | g2 | 41–75 | 175 |
+| 三年级 | g3 | 76–110 | 175 |
+| 四年级 | g4 | 111–140 | 150 |
+| 五年级 | g5 | 141–170 | 150 |
+| 六年级 | g6 | 171–200 | 150 |
+| 七年级 | g7 | 201–240 | 200 |
+| 八年级 | g8 | 241–280 | 200 |
+| 九年级 | g9 | 281–320 | 200 |
+
+合计 320 单元 = 1600 词（当前只灌了一年级的 200 词）。`gen-words-js.mjs` 读它产出 `words.js` 里的 `GRADES`
+→**改划分只改这个 JSON、重跑生成器即可，不动任何代码**。区间必须连续覆盖 1..320、无缺口重叠（`grade-check.cjs` 强制）。
+
 ## 交付前自检
 
 ```bash
 cd starwords-miniprogram-scripts
 node check-static.cjs      # 模块引用、页面四件套、体积、文件数、隐私清单、分享能力……
+node grade-check.cjs       # 年级划分表（连续覆盖 / GRADES 一致 / 词条不含 grade 字段）
 node preview-compile.cjs   # 本地复现平台预览编译
 ```
+
+完整清单共 16 个脚本：`check-static` `phonetic-check` `grade-check` `share-runtime-check` `record-score-check`
+`match-check` `match-runtime-check` `stars-check` `review-runtime-check` `avatar-check` `avatar-runtime-check`
+`pk-check` `pk-runtime-check` `audio-pack-check` `audio-runtime-check` `grade-runtime-check`。
 
 ## 关键约束（改代码前必读）
 

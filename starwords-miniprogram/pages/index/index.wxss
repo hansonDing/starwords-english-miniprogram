@@ -88,6 +88,29 @@
   font-weight: 700;
 }
 
+/* 年级名 + 切换入口（点了去年级选择页） */
+.week-title-row {
+  display: flex;
+  align-items: center;
+}
+
+.switch-grade {
+  font-size: 24rpx;
+  color: #9b8af4;
+  margin-left: 12rpx;
+  padding: 6rpx 14rpx;
+  border: 2rpx solid #ddd6fe;
+  border-radius: 20rpx;
+}
+
+/* 本年级没有可学的新词时（学完了 / 还没上线）替代词格 */
+.week-empty {
+  padding: 40rpx 0;
+  text-align: center;
+  font-size: 28rpx;
+  color: #9ca3af;
+}
+
 .week-bar {
   height: 16rpx;
   background: #ede9fe;

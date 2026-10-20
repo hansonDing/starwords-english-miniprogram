@@ -2,6 +2,7 @@ const { cloud, cloudError, available: cloudAvailable } = require('../../utils/cl
 const store = require('../../utils/store');
 const leaderboard = require('../../utils/leaderboard');
 const pkCloud = require('../../utils/pkCloud');
+const wordLib = require('../../utils/words');
 
 Page({
   data: {
@@ -169,7 +170,7 @@ Page({
     }
     cloud.database
       .from('leaderboard')
-      .select('owner_name, learned_count, streak_days, current_week, owner_id')
+      .select('owner_name, learned_count, streak_days, current_week, grade_id, owner_id')
       .order('learned_count', { ascending: false })
       .order('updated_at', { ascending: false })
       .limit(20)
@@ -186,6 +187,8 @@ Page({
           learned: row.learned_count,
           streak: row.streak_days,
           week: row.current_week,
+          // 老行没有 grade_id → 空串，模板自动省略
+          gradeName: row.grade_id ? (wordLib.gradeById(row.grade_id) || {}).name || '' : '',
           isMe: this.data.loggedIn && row.owner_id === this.data.userId,
         }));
         const myIdx = leaderboard.findIndex((r) => r.isMe);

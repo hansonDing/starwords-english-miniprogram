@@ -1,16 +1,18 @@
 // 学习进度存储：本地 wx.storage 为准，登录后自动同步到云数据库
 const scheduler = require('./scheduler');
 const avatar = require('./avatar');
+const wordLib = require('./words');
 const { cloud } = require('./cloud');
 
 const STORAGE_KEY = 'starwords-progress';
 
 const DEFAULT_PROGRESS = {
-  progressVersion: 2,
-  // ⚠️ 字段名叫 currentWeek，实际含义是「第几个学习日」：每完成一天的会话 +1（每天 5 个新词）。
-  // 词库按 40 组 × 5 词组织（words.js 里叫 week），所以对外一律显示成「第 N 天」。
-  // 改字段名会动到云端 learning_progress.data 的 schema，故保留旧名。
+  progressVersion: 3,
+  // ⚠️ 名叫 currentWeek，实际是「第几个学习日」（每天 +1），对外显示「第 N 天」。
+  // 年级化后只是纯天数：「今天学哪个单元」改由 nextUnitInGrade() 从 words 推导。
   currentWeek: 1,
+  // ⚠️ 不存「每个年级各自的进度」—— 那是第二份真相；年级内进度从 words 推导。
+  currentGrade: 'g1',
   words: [],
   streakDays: 0,
   lastLearnedDate: null,
@@ -31,17 +33,42 @@ const DEFAULT_PROGRESS = {
 const MAX_PK_REWARDED = 100;
 
 /**
- * 把存档 / 云端数据归一成可用形状。
- * 每个字段都要能扛住脏数据：存档可能来自旧版本（缺字段），云端那份也可能被人手动改过。
+ * 反推年级（老存档 / 脏数据缺 currentGrade 时用）。
+ * ⚠️ 不能只看 currentWeek —— 它是「学习日」，多年级时代与单元号不再相等，
+ * 所以优先用已学词的最大单元号。
+ */
+function inferGradeId(p) {
+  let maxUnit = 0;
+  for (const rec of p.words) {
+    const meta = wordLib.getWordById(rec.wordId);
+    if (meta && rec.learned && meta.week > maxUnit) maxUnit = meta.week;
+  }
+  if (maxUnit > 0) return wordLib.gradeOfWeek(maxUnit).id;
+  // 一条学习记录都没有：此时学习日与单元号等价，反推安全；再不行回落第一个年级。
+  const day = Math.max(1, Number(p.currentWeek) || 1);
+  const g = wordLib.gradeOfWeek(day);
+  return g ? g.id : wordLib.GRADES[0].id;
+}
+
+/**
+ * 把存档 / 云端数据归一成可用形状。每个字段都要扛住脏数据（旧版本缺字段、云端被手改过）。
  * 只做「类型修复」，不动业务语义。
  */
 function normalizeProgress(p) {
   if (!Array.isArray(p.words)) p.words = [];
-  // 旧存档没有 pkRewarded；云端也可能被改成 null → 一律归一化成数组
   if (!Array.isArray(p.pkRewarded)) p.pkRewarded = [];
-  // 形象 id：缺失 / null / 数字 / 不存在的 id 一律回落成「未选择」
-  // （由 hasAvatar() 判定；渲染走 getAvatar() 的兜底，不会空白）
-  if (typeof p.avatarId !== 'string' || !avatar.findById(p.avatarId)) p.avatarId = '';
+  // 形象 id：先按老 id 迁移（曾每性别 6 个现 4 个 —— girl-6 → girl-1，**同性别**兜底，
+  // 别让女孩突然变男孩）；迁移不了才回落成「未选择」，由 hasAvatar() 判定。
+  if (typeof p.avatarId === 'string' && p.avatarId && !avatar.findById(p.avatarId)) {
+    p.avatarId = avatar.migrateId(p.avatarId) || '';
+  }
+  if (typeof p.avatarId !== 'string') p.avatarId = '';
+  // 年级：缺失 / 非法 → 反推（必须在 words 归一之后）
+  if (typeof p.currentGrade !== 'string' || !wordLib.gradeById(p.currentGrade)) {
+    p.currentGrade = inferGradeId(p);
+  }
+  // 版本号只升不降 —— 否则云端那份（已是 3）会被本地老档的版本号拉回去
+  if (!(Number(p.progressVersion) >= 3)) p.progressVersion = 3;
   return p;
 }
 
@@ -145,6 +172,124 @@ function getStarBalance() {
   return current.stars || 0;
 }
 
+/* ---------------- 年级 ---------------- */
+
+/** 已学词 id 集合 —— 年级进度的**唯一事实来源**（所以不需要第二份进度表） */
+function learnedIds() {
+  const set = Object.create(null);
+  for (const rec of current.words) {
+    if (rec.learned || (typeof rec.score === 'number' && rec.score > 0)) set[rec.wordId] = true;
+  }
+  return set;
+}
+
+/** 当前激活的年级。存档脏成非法 id 时兜底第一个年级，**永不返回空** */
+function currentGrade() {
+  return wordLib.gradeById(current.currentGrade) || wordLib.GRADES[0];
+}
+
+/**
+ * 该年级第一个「还有没学完的词」的单元号；全学完 / 未灌内容 → null。
+ * ⚠️ 绝不跳过「学到一半」的单元。
+ */
+function nextUnitInGrade(gradeId) {
+  const g = wordLib.gradeById(gradeId || current.currentGrade);
+  if (!g) return null;
+  const set = learnedIds();
+  for (let u = g.firstUnit; u <= g.lastUnit; u++) {
+    const list = wordLib.getWeekWords(u);
+    if (list.length === 0) break; // 内容只灌到这里，后面的单元还不存在
+    for (let i = 0; i < list.length; i++) {
+      if (!set[list[i].id]) return u; // ← 有词没学就停在这一单元，绝不跳过
+    }
+  }
+  return null;
+}
+
+/** 年级进度 `{ total, learned, percent, completed, available }` —— 从 words 推导 */
+function gradeStats(gradeId) {
+  const list = wordLib.getGradeWords(gradeId);
+  const set = learnedIds();
+  let learned = 0;
+  for (const w of list) if (set[w.id]) learned++;
+  const total = list.length;
+  return {
+    total: total,
+    learned: learned,
+    percent: total > 0 ? Math.round((learned / total) * 100) : 0,
+    completed: total > 0 && learned === total,
+    available: total > 0, // 该年级是否已经灌了内容（未灌 → 页面显示「未开放」）
+  };
+}
+
+/** 切换年级。跳级的家长确认由页面负责，这里只校验 id 合法 */
+function setGrade(gradeId) {
+  const g = wordLib.gradeById(gradeId);
+  if (!g) return currentGrade().id;
+  setProgress(Object.assign({}, current, { currentGrade: g.id }));
+  return g.id;
+}
+
+/** 当前年级末单元 —— 给 completeDailySession 当指针上限。⚠️ 别退回 MAX_WEEK（会跨年级跳） */
+function currentGradeMaxUnit() {
+  return Math.min(currentGrade().lastUnit, wordLib.MAX_WEEK);
+}
+
+/**
+ * 学完当前年级后自动前移。已是最后一级 / 下一级没灌内容 → null。
+ * ⚠️ 不要塞进 completeDailySession —— 那个函数只管学习日 / streak / 复习调度。
+ */
+function advanceGrade() {
+  const grades = wordLib.GRADES;
+  let idx = -1;
+  for (let i = 0; i < grades.length; i++) {
+    if (grades[i].id === current.currentGrade) idx = i;
+  }
+  if (idx < 0 || idx >= grades.length - 1) return null;
+  const next = grades[idx + 1];
+  if (wordLib.getGradeWords(next.id).length === 0) return null;
+  setProgress(Object.assign({}, current, { currentGrade: next.id }));
+  return next.id;
+}
+
+/** 年级卡片列表（年级选择页用） */
+function gradeList() {
+  const activeId = currentGrade().id;
+  return wordLib.GRADES.map((g) => {
+    const s = gradeStats(g.id);
+    return {
+      id: g.id,
+      name: g.name,
+      firstUnit: g.firstUnit,
+      lastUnit: g.lastUnit,
+      total: s.total,
+      learned: s.learned,
+      percent: s.percent,
+      completed: s.completed,
+      available: s.available,
+      active: g.id === activeId,
+    };
+  });
+}
+
+/** 全局汇总（首页头部 / 进度页用） */
+function totalStats() {
+  const set = learnedIds();
+  let learned = 0;
+  for (const w of wordLib.WORDS) if (set[w.id]) learned++;
+  const total = wordLib.WORDS.length;
+  const g = currentGrade();
+  return {
+    total: total,
+    learned: learned,
+    percent: total > 0 ? Math.round((learned / total) * 100) : 0,
+    days: current.currentWeek,
+    streak: current.streakDays,
+    gradeId: g.id,
+    gradeName: g.name,
+  };
+}
+
 /* ---------------- 星星形象（Avatar） ---------------- */
 
 /**
@@ -208,8 +353,14 @@ function recordReviewResult(wordId, correct, date) {
   );
 }
 
-/** 当日学习完成：锁定今天、推进 streak 与「学习日」计数、启动复习调度 */
-function completeDailySession(maxWeek, date) {
+/**
+ * 当日学习完成：锁定今天、推进 streak 与「学习日」计数、启动复习调度。
+ *
+ * @param {number} maxUnit 「学习日指针」的上限。⚠️ 必须传**当前年级的末单元**
+ *   （`store.currentGradeMaxUnit()`）—— 传 MAX_WEEK 会让孩子学完一年级最后一天后，
+ *   指针直接落进还没解锁的二年级区域。
+ */
+function completeDailySession(maxUnit, date) {
   const today = date || scheduler.localToday();
   setProgress((prev) => {
     const words = prev.words.map((w) =>
@@ -233,7 +384,7 @@ function completeDailySession(maxWeek, date) {
       words,
       streakDays: newStreak,
       lastLearnedDate: today,
-      currentWeek: Math.min(prev.currentWeek + 1, maxWeek),
+      currentWeek: Math.min(prev.currentWeek + 1, maxUnit),
     });
   });
 }
@@ -350,6 +501,15 @@ module.exports = {
   getAvatar,
   hasAvatar,
   setAvatar,
+  // 年级
+  currentGrade,
+  nextUnitInGrade,
+  gradeStats,
+  setGrade,
+  currentGradeMaxUnit,
+  advanceGrade,
+  gradeList,
+  totalStats,
   recordReviewResult,
   completeDailySession,
   resetProgress,

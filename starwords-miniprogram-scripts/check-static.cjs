@@ -153,6 +153,22 @@ if (!fs.existsSync(spriteAbs)) {
   }
 }
 
+// 音频已包化：400 个单文件 → 40+40 个周包（gen-audio-packs.py → utils/audioPackMap.js）。
+// words.js 的 audio / phraseAudio 现在是「词条 id」，不再是页面相对路径 —— 所以这里
+// 不再查单文件存在性，改为查「id 能在映射表里找到段」+「段所在的周包存在」。
+// ⚠️ 两份映射表键完全相同（都是词条 id），单词段在 SEG、例句段在 PSEG，查错表会「假绿」。
+const mapMod = { exports: {} };
+new Function('module', 'exports', 'require', fs.readFileSync(path.join(root, 'utils', 'audioPackMap.js'), 'utf8'))(
+  mapMod,
+  mapMod.exports,
+  () => {
+    throw new Error('audioPackMap.js 不应有外部依赖');
+  }
+);
+const SEG = (mapMod.exports && mapMod.exports.SEG) || {};
+const PSEG = (mapMod.exports && mapMod.exports.PSEG) || {};
+const neededPacks = new Set();
+
 const stepX = 100 / SPRITE.cols;
 const stepY = 100 / SPRITE.rows;
 for (const w of WORDS) {
@@ -162,17 +178,20 @@ for (const w of WORDS) {
     continue;
   }
   if (w.audio.startsWith('/') || w.phraseAudio.startsWith('/')) {
-    fail(`${w.id} 使用前导斜杠绝对路径（预览模拟器无法解析）`);
+    fail(`${w.id} 的音频字段应是词条 id，不应是路径（${w.audio} / ${w.phraseAudio}）`);
     bad++;
   }
-  for (const [label, p] of [
-    ['单词音频', w.audio],
-    ['例句音频', w.phraseAudio],
+  for (const [label, id, table] of [
+    ['单词', w.audio, SEG],
+    ['例句', w.phraseAudio, PSEG],
   ]) {
-    if (!fs.existsSync(path.resolve(root, 'pages', 'learn', p))) {
-      fail(`${w.id} ${label}缺失 ${p}`);
+    const seg = table[id];
+    if (!seg) {
+      fail(`${w.id} ${label}音频段未登记在映射表里：${id}（改过词库后要先重跑 gen-audio-packs.py）`);
       bad++;
+      continue;
     }
+    neededPacks.add(seg.p);
   }
   // 格子偏移必须是列/行步长的整数倍，且在 0 ~ 负一格以内
   const nx = w.imgTx / stepX;
@@ -185,6 +204,16 @@ for (const w of WORDS) {
     bad++;
   }
 }
+// 段声明的周包必须真的存在 —— 映射表与 assets 不同步时，真机表现是「静默无声」
+for (const p of neededPacks) {
+  const dir = p.slice(0, 2) === 'wp' ? 'assets/audio' : 'assets/phrases';
+  if (!fs.existsSync(path.resolve(root, dir, p + '.mp3'))) {
+    fail(`周包缺失 ${dir}/${p}.mp3 —— 映射表与 assets 不同步，请重跑 gen-audio-packs.py`);
+    bad++;
+  }
+}
+if (!failed) pass(`200 个词条的单词/例句音频段均已登记，${neededPacks.size} 个周包齐备`);
+
 // 词条数不能超过精灵图容量，否则有词会取到空格子
 if (WORDS.length > SPRITE.cols * SPRITE.rows) {
   fail(`词条 ${WORDS.length} 个超过精灵图容量 ${SPRITE.cols * SPRITE.rows} 格`);
@@ -522,7 +551,11 @@ console.log('[4j] 星星账户');
   const learnSrc = fs.readFileSync(path.join(root, 'pages', 'learn', 'learn.js'), 'utf8');
   const mineWxml = fs.readFileSync(path.join(root, 'pages', 'mine', 'mine.wxml'), 'utf8');
 
-  if (!/DEFAULT_PROGRESS[\s\S]{0,600}?stars:\s*0/.test(storeSrc)) {
+  // ⚠️ 别改回 `DEFAULT_PROGRESS[\s\S]{0,600}?stars:0` 那种「窗口 + 距离」写法 ——
+  // 字段上方一加注释就会把 stars 挤出窗口，误报「缺少 stars 字段」。
+  // 正确做法：先把 DEFAULT_PROGRESS 的块抠出来，再在块内找字段。
+  const defaultBlock = (storeSrc.match(/DEFAULT_PROGRESS = \{[\s\S]*?\n\};/) || [''])[0];
+  if (!/stars:\s*0/.test(defaultBlock)) {
     fail('store.js 的 DEFAULT_PROGRESS 缺少 stars 字段（账户余额）');
   } else if (!/function creditStars\s*\(/.test(storeSrc) || !/function getStarBalance\s*\(/.test(storeSrc)) {
     fail('store.js 缺少 creditStars() / getStarBalance()');
@@ -652,7 +685,7 @@ console.log('[4l] PK 挑战');
 
 /* ---------- 4m. 星星形象（Avatar）----------
    锁四处**静默坏掉**的地方（界面全正常，只是形象错位 / 不显示 / 不变黑）：
-     ① 精灵图常量三处必须一致：utils/avatar.js 的 SPRITE、gen-avatars.py、app.wxss 的 600%/200%。
+     ① 精灵图常量三处必须一致：utils/avatar.js 的 SPRITE、gen-avatars.py、app.wxss 的 400%/200%。
         只改一处 → 真机上形象错位成「别的形象的边角」，零报错。
      ② 代码里的 LIST 必须与生成器写出的 avatar-map.json 逐条一致
         → 否则「选了蝴蝶结显示成花环」。
@@ -717,7 +750,7 @@ console.log('[4m] 星星形象');
   // app.wxss 的裁切容器与放大倍数
   const clipOk = /\.avatar-clip\s*\{[^}]*overflow:\s*hidden/.test(appWxss);
   const imgOk =
-    /\.avatar-img\s*\{[^}]*width:\s*600%/.test(appWxss) && /\.avatar-img\s*\{[^}]*height:\s*200%/.test(appWxss);
+    /\.avatar-img\s*\{[^}]*width:\s*400%/.test(appWxss) && /\.avatar-img\s*\{[^}]*height:\s*200%/.test(appWxss);
 
   // ⚠️ 页面预览只复制**字面量**引用的资源：wxml 里出现几次 avatars.png，
   //    就必须有几个写成 src="../../assets/avatars.png"（用 {{}} 绑定的必 404）
@@ -743,7 +776,7 @@ console.log('[4m] 星星形象');
   } else if (missingApi.length) {
     fail('utils/avatar.js 缺少：' + missingApi.join(' / '));
   } else if (!sprite) {
-    fail('utils/avatar.js 的 SPRITE 常量解析不出来（格式应为 cols: 6, rows: 2, cell: 192）');
+    fail('utils/avatar.js 的 SPRITE 常量解析不出来（格式应为 cols: 4, rows: 2, cell: 192）');
   } else if (!real) {
     fail('assets/avatars.png 不存在或读不出尺寸（形象图必须随包发布）');
   } else if (real.width !== sprite.cols * sprite.cell || real.height !== sprite.rows * sprite.cell) {
@@ -753,12 +786,14 @@ console.log('[4m] 星星形象');
   } else if (!pySprite || pySprite.cols !== sprite.cols || pySprite.rows !== sprite.rows || pySprite.cell !== sprite.cell) {
     fail('gen-avatars.py 的 COLS/ROWS/CELL 与 utils/avatar.js 的 SPRITE 不一致（两张图会长得不一样）');
   } else if (!clipOk || !imgOk) {
-    fail('app.wxss 缺少 .avatar-clip{overflow:hidden} 或 .avatar-img 的 600%/200%（取图会错位）');
-  } else if (!map || mapIds.length !== 12) {
-    fail('avatar-map.json 缺失或不是 12 个形象（生成器产出，代码靠它对齐落位）');
+    fail('app.wxss 缺少 .avatar-clip{overflow:hidden} 或 .avatar-img 的 400%/200%（取图会错位）');
+  } else if (!map || mapIds.length !== 8) {
+    fail('avatar-map.json 缺失或不是 8 个形象（生成器产出，代码靠它对齐落位）');
   } else if (srcIds.join(',') !== mapIds.join(',')) {
     fail('utils/avatar.js 的 LIST 与 avatar-map.json 不一致：代码 ' + srcIds.join(',') + ' / 美术 ' + mapIds.join(','));
-  } else if (pngMentions !== pngLiterals || pngLiterals < 6) {
+  } else if (avatarSrc.indexOf('migrateId') === -1 || storeSrc.indexOf('avatar.migrateId(') === -1) {
+    fail('缺少 migrateId（老存档 girl-6 → girl-1 的同性别兜底）—— 女孩会突然变成男孩');
+  } else if (pngMentions !== pngLiterals || pngLiterals < 4) {
     fail(
       'wxml 里的 avatars.png 必须全部写成字面量 src（共 ' + pngLiterals + ' 处字面量 / ' + pngMentions + ' 处引用）—— 平台预览只复制字面量引用的资源'
     );
@@ -783,7 +818,75 @@ console.log('[4m] 星星形象');
   } else if (badSyntax.length) {
     fail('形象相关文件含老引擎无法解析的语法：' + badSyntax.join('；'));
   } else {
-    pass('形象接线正确（精灵图 ' + sprite.cols + '×' + sprite.rows + '@' + sprite.cell + '，12 个形象，取图常量三处一致）');
+    pass('形象接线正确（精灵图 ' + sprite.cols + '×' + sprite.rows + '@' + sprite.cell + '，8 个拟人形象，取图常量三处一致，老 id 可迁移）');
+  }
+}
+
+/* ---------- 4n. 学习结算页（静态，无庆祝动画） ----------
+   做了什么：孩子学完当天 5 词 + 配对闯关后，不再演三幕动画（原来要等 5.4 秒），
+   直接进静态结算页。
+   为什么单独守一道：删动画是「减法」，最容易做一半 —— 数据字段删了但 wxml 还引用，
+   或 wxss 样式留着、代码里又被人加回 setTimeout。这类残留**不报错**，
+   只是又白等 5 秒，肉眼很容易忽略。行为验证另跑 `node match-runtime-check.cjs`。 */
+console.log('[4n] 学习结算页（静态，无庆祝动画）');
+{
+  const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
+  const learnJs = read('pages/learn/learn.js');
+  const learnWxml = read('pages/learn/learn.wxml');
+  const learnWxss = read('pages/learn/learn.wxss');
+
+  const gone = [
+    'rewardStage',
+    'rewardWords',
+    'rewardTimers',
+    'buildConfetti',
+    'clearRewardTimers',
+    'startRewardShow',
+    'onSkipReward',
+    'celebrate',
+    'confetti',
+    'mascot',
+    'parade',
+  ];
+  const leftJs = gone.filter((k) => learnJs.indexOf(k) !== -1);
+  const leftWxml = gone.filter((k) => learnWxml.indexOf(k) !== -1);
+  const leftWxss = gone.filter((k) => learnWxss.indexOf(k) !== -1);
+
+  // 结算区样式里一点动画都不许有（含 @keyframes），否则「去掉动画」只做了半截
+  const from = learnWxss.indexOf('结算页（静态，零动画）');
+  const to = learnWxss.indexOf('Step 4');
+  const doneCss = from !== -1 && to > from ? learnWxss.slice(from, to) : '';
+  const animated = /animation\s*:|@keyframes/.test(doneCss);
+
+  // 结算页里的单词图必须是**字面量** src（平台预览只复制字面量引用的资源）
+  const literalSprite = (learnWxml.match(/src="\.\.\/\.\.\/assets\/sprite\.jpg"/g) || []).length;
+
+  if (leftJs.length) {
+    fail('learn.js 还残留庆祝动画代码：' + leftJs.join(' / '));
+  } else if (leftWxml.length) {
+    fail('learn.wxml 还残留庆祝动画：' + leftWxml.join(' / '));
+  } else if (leftWxss.length) {
+    fail('learn.wxss 还残留庆祝动画样式：' + leftWxss.join(' / '));
+  } else if (learnJs.indexOf('enterDone') === -1) {
+    fail('learn.js 缺少 enterDone()（学完 5 词的结算入口）');
+  } else if (learnWxml.indexOf("phase === 'done'") === -1) {
+    fail("learn.wxml 缺少 phase === 'done' 的结算块");
+  } else if (learnWxml.indexOf('doneWords') === -1) {
+    fail('learn.wxml 未渲染 doneWords（今天学会的单词清单没了）');
+  } else if (learnWxml.indexOf('看奖励动画') !== -1) {
+    fail('配对按钮文案还写着「看奖励动画」（动画已经删了）');
+  } else if (!doneCss) {
+    fail('learn.wxss 找不到结算区样式（.done-page 一带的注释标记）');
+  } else if (animated) {
+    fail('结算区仍含 animation / @keyframes —— 动画只删了一半');
+  } else if (literalSprite < 2) {
+    fail(
+      'learn.wxml 的 sprite.jpg 字面量引用只剩 ' +
+        literalSprite +
+        ' 处（结算页的单词图也要写成 src="../../assets/sprite.jpg"）'
+    );
+  } else {
+    pass('结算页为纯静态（无庆祝代码残留 / 无动画 / 无定时器）');
   }
 }
 
@@ -801,6 +904,59 @@ for (const pg of app.pages) {
   }
 }
 if (!missingHandler) pass('wxml 中所有 bind* 处理函数均已定义');
+
+/* ---------- 5b. 页面路由 ----------
+ * 这类 bug 只在点了按钮那一刻炸（switchTab 到非 tab 页 → 静默失败；
+ * navigateTo 到 tab 页 → 直接报错），预览未必走到那条分支 → 必须静态拦。
+ * ⚠️ 只扫 pages/ 与 utils/：lib/ 里的云 SDK 是压缩产物，含同名 API 字样会误报。
+ */
+console.log('[5b] 页面路由');
+const tabPaths = ((app.tabBar && app.tabBar.list) || []).map((t) => t.pagePath);
+const toRoute = (u) => u.split('?')[0].replace(/^\//, '');
+let routeBad = 0;
+let routeSeen = 0;
+const routeFiles = [];
+for (const dir of ['pages', 'utils']) {
+  (function walkRoute(d) {
+    for (const name of fs.readdirSync(d)) {
+      const p = path.join(d, name);
+      if (fs.statSync(p).isDirectory()) walkRoute(p);
+      else if (name.endsWith('.js')) routeFiles.push(p);
+    }
+  })(path.join(root, dir));
+}
+for (const f of routeFiles) {
+  const src = fs.readFileSync(f, 'utf8');
+  const where = rel(f);
+  for (const m of src.matchAll(/wx\.(navigateTo|redirectTo|switchTab|reLaunch)\s*\(\s*\{[^}]*?url\s*:\s*['"]([^'"]+)['"]/g)) {
+    const api = m[1];
+    const route = toRoute(m[2]);
+    routeSeen++;
+    if (app.pages.indexOf(route) < 0) {
+      fail(`${where} ${api} 指向未注册页面 ${route}`);
+      routeBad++;
+      continue;
+    }
+    const isTab = tabPaths.indexOf(route) >= 0;
+    if (api === 'switchTab' && !isTab) {
+      fail(`${where} switchTab 指向非 tabBar 页 ${route}（会静默失败，应改 navigateTo）`);
+      routeBad++;
+    }
+    if ((api === 'navigateTo' || api === 'redirectTo') && isTab) {
+      fail(`${where} ${api} 指向 tabBar 页 ${route}（会直接报错，应改 switchTab）`);
+      routeBad++;
+    }
+  }
+  // 分享卡片 path：写错 = 别人点进来白屏
+  for (const m of src.matchAll(/(?:^|[^\w.])path\s*:\s*['"](\/pages\/[^'"]+)['"]/g)) {
+    routeSeen++;
+    if (app.pages.indexOf(toRoute(m[1])) < 0) {
+      fail(`${where} 分享卡片 path 指向未注册页面 ${toRoute(m[1])}`);
+      routeBad++;
+    }
+  }
+}
+if (!routeBad) pass(`${routeSeen} 处页面跳转 / 分享路径全部合法（tabBar ${tabPaths.length} 页）`);
 
 /* ---------- 6. JSON 可解析 + 关键配置 ---------- */
 console.log('[6] 配置');

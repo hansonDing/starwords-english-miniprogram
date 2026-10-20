@@ -1,4 +1,4 @@
-const { getWeekWords, WORDS, WORDS_PER_WEEK, MAX_WEEK } = require('../../utils/words');
+const { getWeekWords, WORDS, WORDS_PER_WEEK } = require('../../utils/words');
 const store = require('../../utils/store');
 const scheduler = require('../../utils/scheduler');
 const audio = require('../../utils/audio');
@@ -23,7 +23,7 @@ function shuffle(arr) {
 
 Page({
   data: {
-    phase: 'learning', // learning | celebrate
+    phase: 'learning', // learning | done（done = 学完当天 5 词的静态结算页）
     week: 1,
     wordIndex: 0,
     step: 1,
@@ -50,21 +50,20 @@ Page({
     matchTotal: 0,
     matchAllDone: false,
     finishedCount: 0,
-    // 本次会话通过跟读攒到的星星（庆祝页展示）
+    // 本次会话通过跟读攒到的星星（结算页展示）
     earnedStars: 0,
     weekWordsView: [],
     newAchievements: [],
-    // 奖励动画片：1 星星出场 → 2 跳舞撒花 → 3 单词巡游
-    rewardStage: 0,
-    rewardWords: [],
-    confetti: [],
+    // 结算页的年级提示（如「一年级完成 · 二年级开始」），空串则不显示
+    gradeNote: '',
+    // 结算页要展示的当天 5 个单词（静态列表，零动画）
+    doneWords: [],
   },
 
   wordScores: {},
   recorder: null,
   recordPath: null,
   playbackCtx: null,
-  rewardTimers: [],
   // 星星账本：wordBestStars = 当前单词录制过的**最好**星级（Step2 可反复重录，取最好）；
   // sessionStars = 本次会话累计加到的星数
   wordBestStars: 0,
@@ -76,9 +75,24 @@ Page({
 
   onLoad() {
     const progress = store.getProgress();
-    const week = progress.currentWeek;
+    // 今天学哪个单元：从已学记录推导（不再看 currentWeek —— 那是「第几个学习日」）
+    const grade = store.currentGrade();
+    const unit = store.nextUnitInGrade(grade.id);
+    if (unit === null) {
+      // 本年级没有可学的新词（学完了 / 还没灌内容）→ 直接进结算页，别停在空词卡上
+      const stats = store.gradeStats(grade.id);
+      this.setData({
+        phase: 'done',
+        week: 0,
+        doneWords: [],
+        finishedCount: stats.learned,
+        gradeNote: stats.available ? grade.name + '已全部学完' : grade.name + '即将上线',
+      });
+      return;
+    }
+    const week = unit;
     const words = getWeekWords(week);
-    // 跳过本周已学完的词（如昨天学了一半）
+    // 跳过本组已学完的词（如昨天学了一半）
     const firstIdx = words.findIndex((w) => {
       const wp = progress.words.find((x) => x.wordId === w.id);
       return !(wp && wp.learned);
@@ -103,7 +117,6 @@ Page({
   },
 
   onUnload() {
-    this.clearRewardTimers();
     this.clearMatchTimer();
     audio.stop();
     if (this.playbackCtx) {
@@ -354,11 +367,10 @@ Page({
     }, 600);
   },
 
-  // 全部配对完成 → 接进原有的庆祝三幕
+  // 全部配对完成 → 结算页（静态展示，不再有动画）
   onMatchFinish() {
     this.clearMatchTimer();
-    this.setData({ phase: 'celebrate' });
-    this.startRewardShow(getWeekWords(this.data.week));
+    this.enterDone();
   },
 
   onNextWord() {
@@ -378,9 +390,18 @@ Page({
     const words = getWeekWords(this.data.week);
 
     if (nextIndex >= words.length) {
-      // 5 词全部学完 → **立刻**结算日会话。
-      // 刻意放在配对之前：孩子在配对环节中途退出，也不会丢掉当天的完成记录与连续天数。
-      store.completeDailySession(MAX_WEEK, scheduler.localToday());
+      // 5 词全部学完 → **立刻**结算日会话（放在配对之前：中途退出也不丢当天记录）。
+      // ⚠️ 上限必须是当前年级末单元；⚠️ 顺序不能反：先结算（上限仍是本年级），再前移年级。
+      const grade = store.currentGrade();
+      const lastUnitOfGrade = this.data.week >= store.currentGradeMaxUnit();
+      store.completeDailySession(store.currentGradeMaxUnit(), scheduler.localToday());
+      // 这一组正好是本年级最后一组 → 自动前移激活年级（下一级还没灌内容则不动）
+      const advancedTo = lastUnitOfGrade ? store.advanceGrade() : null;
+      const gradeNote = lastUnitOfGrade
+        ? advancedTo
+          ? grade.name + '完成 · ' + store.currentGrade().name + '开始'
+          : grade.name + '已全部学完'
+        : '';
       store.refreshAchievements();
       store.syncToCloud();
       // 连学天数 / 当前周次也变了，再推一次排行榜
@@ -397,6 +418,7 @@ Page({
           finishedCount,
           earnedStars,
           newAchievements,
+          gradeNote,
           quiz: null,
           quizAnswered: false,
           quizCorrect: false,
@@ -406,14 +428,13 @@ Page({
         return;
       }
 
-      this.setData({
-        phase: 'celebrate',
+      this.enterDone({
         weekWordsView: view,
         finishedCount,
         earnedStars,
         newAchievements,
+        gradeNote,
       });
-      this.startRewardShow(words);
       return;
     }
     // 推进到最后一个词时要立刻把步数上限切到 4：
@@ -444,63 +465,30 @@ Page({
     wx.nextTick(() => this.playWord().then(() => this.playPhrase({ silent: true })));
   },
 
-  /* ---------- 奖励动画片（纯 CSS 动画，不联网、不占包体） ---------- */
-  buildConfetti() {
-    const icons = ['🎉', '✨', '⭐', '🎈', '🌈', '💫', '🎊', '🌟', '🍀', '🎁', '🎵', '💖'];
-    const list = [];
-    for (let i = 0; i < icons.length; i++) {
-      list.push({
-        id: i,
-        icon: icons[i],
-        left: 4 + Math.round(Math.random() * 88),
-        delay: Math.round(Math.random() * 20) / 10, // 0 ~ 2.0s
-        dur: (2 + Math.random()).toFixed(1), // 2.0 ~ 3.0s
-        size: 26 + Math.round(Math.random() * 22),
-      });
-    }
-    return list;
-  },
-
-  clearRewardTimers() {
-    const timers = this.rewardTimers || [];
-    for (let i = 0; i < timers.length; i++) clearTimeout(timers[i]);
-    this.rewardTimers = [];
-  },
-
-  // 三幕演出：1 星星出场 → 2 小动物跳舞撒花 → 3 单词巡游 + 成就
-  startRewardShow(words) {
-    this.clearRewardTimers();
-    this.setData({
-      rewardStage: 1,
-      rewardWords: (words || []).map((w) => ({
-        id: w.id,
-        word: w.word,
-        meaning: w.meaning,
-        imgTx: w.imgTx,
-        imgTy: w.imgTy,
-      })),
-      confetti: this.buildConfetti(),
-    });
-    if (typeof wx.vibrateShort === 'function') {
-      try {
-        wx.vibrateShort({ type: 'medium' });
-      } catch (e) {
-        /* 机型不支持则忽略 */
-      }
-    }
-    this.rewardTimers = [
-      setTimeout(() => this.setData({ rewardStage: 2 }), 2600),
-      setTimeout(() => this.setData({ rewardStage: 3 }), 5400),
-    ];
-  },
-
-  onSkipReward() {
-    this.clearRewardTimers();
-    this.setData({ rewardStage: 3 });
+  /* ---------- 结算页（静态，零动画、不联网、不占包体） ---------- */
+  // 集中一处设置结算数据：配对完成、以及「已玩过配对还要再进一次」的兜底分支都走这里。
+  // 刻意不做任何动画与定时器 —— 孩子学完立刻看到结果，不用等 5 秒演出。
+  enterDone(extra) {
+    // week === 0 表示「本年级没有可学的新词」，此时没有当天词卡可展示
+    const words = this.data.week ? getWeekWords(this.data.week) : [];
+    this.setData(
+      Object.assign(
+        {
+          phase: 'done',
+          doneWords: words.map((w) => ({
+            id: w.id,
+            word: w.word,
+            meaning: w.meaning,
+            imgTx: w.imgTx,
+            imgTy: w.imgTy,
+          })),
+        },
+        extra || {}
+      )
+    );
   },
 
   onBackHome() {
-    this.clearRewardTimers();
     wx.switchTab({ url: '/pages/index/index' });
   },
 });

@@ -19,16 +19,19 @@
     </view>
   </view>
 
-  <!-- 今日词卡（dayNo = 第几个学习日，每天 5 个新词） -->
+  <!-- 今日词卡（dayNo = 第几个学习日；单元号是 unitNo，跨年级后两者会分家） -->
   <view class="card week-card">
     <view class="week-head">
-      <text class="title">第 {{dayNo}} 天</text>
+      <view class="week-title-row" bindtap="onGoGrades">
+        <text class="title">{{gradeName}} · 第 {{dayNo}} 天</text>
+        <text class="switch-grade">切换 ›</text>
+      </view>
       <text class="week-progress">{{progressPercent}}%</text>
     </view>
     <view class="week-bar">
       <view class="week-bar-fill" style="width: {{progressPercent}}%"></view>
     </view>
-    <view class="word-grid">
+    <view class="word-grid" wx:if="{{weekWords.length > 0}}">
       <view
         class="word-chip {{item.learned ? 'learned' : ''}}"
         wx:for="{{weekWords}}"
@@ -48,6 +51,9 @@
         <text class="word-text">{{item.word}}</text>
         <text class="word-star">{{item.learned ? '⭐' : ''}}</text>
       </view>
+    </view>
+    <view class="week-empty" wx:else>
+      <text>{{gradeEmptyText}}</text>
     </view>
   </view>
 

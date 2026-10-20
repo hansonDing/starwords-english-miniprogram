@@ -79,7 +79,7 @@
   color: #6d59eb;
 }
 
-/* ---------- 第 2 步：6 格网格 ---------- */
+/* ---------- 第 2 步：2×2 网格（每性别 4 个，两行两列比 3+1 好看） ---------- */
 .grid {
   display: flex;
   flex-direction: row;
@@ -89,8 +89,8 @@
 }
 
 .cell {
-  width: 32%;
-  margin-bottom: 20rpx;
+  width: 46%;
+  margin-bottom: 24rpx;
   background: #ffffff;
   border: 4rpx solid #ffffff;
   border-radius: 28rpx;
@@ -110,7 +110,7 @@
 
 .cell-clip {
   width: 100%;
-  height: 190rpx;
+  height: 290rpx; /* 卡片宽 ≈46%（约 320rpx）→ 取图格是正方形，这里也接近方形 */
 }
 
 .cell-name {

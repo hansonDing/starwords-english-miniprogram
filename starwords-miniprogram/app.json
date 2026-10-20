@@ -9,7 +9,8 @@
     "pages/admin/admin",
     "pages/pk-create/pk-create",
     "pages/pk-play/pk-play",
-    "pages/avatar/avatar"
+    "pages/avatar/avatar",
+    "pages/grades/grades"
   ],
   "window": {
     "navigationBarBackgroundColor": "#6D59EB",
