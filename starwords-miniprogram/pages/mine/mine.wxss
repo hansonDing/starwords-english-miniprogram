@@ -341,3 +341,93 @@
 .pk-row-state.done {
   color: #059669;
 }
+
+.pk-count {
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+.pk-del {
+  flex: 0 0 auto;
+  margin-left: 12rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 999rpx;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.pk-more {
+  margin-top: 8rpx;
+  text-align: center;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #6b7280;
+  padding: 12rpx 0;
+}
+
+/* ---------- 我收到的新挑战 ---------- */
+.incoming-card {
+  margin-bottom: 24rpx;
+  background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+  border: 3rpx solid #ffe082;
+}
+
+.incoming-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.incoming-title {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #92400e;
+}
+
+.incoming-count {
+  font-size: 24rpx;
+  color: #b45309;
+  background: #fff3d6;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+.incoming-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.incoming-row:last-child {
+  border-bottom: none;
+}
+
+.incoming-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.incoming-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.incoming-sub {
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+.incoming-arrow {
+  font-size: 44rpx;
+  color: #d6b47a;
+  margin-left: 16rpx;
+}

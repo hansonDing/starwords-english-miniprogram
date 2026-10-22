@@ -1,22 +1,10 @@
-// PK 挑战的云端读写（表：pk_challenges）
-//
-// 设计要点（详见 docs/superpowers/specs/2026-10-15-pk-challenge-design.md）：
-//   · 一场 PK 只能被作答一次（先到先得）。这条**由数据库保证**，不是靠前端判断：
-//     RLS 的 update 策略是 `USING (status = 'pending')`，
-//     所以第一个人把 status 改成 'done' 之后，第二个人的 update 会匹配 0 行。
-//     submitResult 用「返回行数为 0」来识别「被人抢先答了」。
-//   · 未登录也要能读挑战、能答、能提交成绩 —— 所以 RLS 的 select/update 对 anon 也开放，
-//     只是 played_by 会写 null（匿名作答）。出题者仍能看到「星星学员答对 4/5」。
-//   · 所有失败都静默收敛成 false / null / []，绝不抛 —— 云端挂了不能拖垮本地流程
+// PK 挑战的云端读写（表：pk_challenges，设计见 docs/superpowers/specs/2026-10-15-pk-challenge-design.md）
+//   · 一场 PK 只能被答一次（先到先得）由数据库保证：RLS 的 update 策略是 USING (status='pending')，
+//     第一个人改成 done 之后第二个人的 update 匹配 0 行 —— submitResult 靠「返回 0 行」识别被抢先。
+//   · 未登录也要能读、能答、能交（RLS 对 anon 开放），只是 played_by 写 null。
+//   · 所有失败静默收敛成 false / null / []，绝不抛：云端挂了不能拖垮本地结算
 //     （孩子答完的星星必须落进本机账户，见 pages/pk-play 的结算顺序）。
-//
-// 云端表结构：
-//   id text pk / challenger_id text / challenger_name text / challenger_avatar text
-//   target_id / target_name / word_ids jsonb / status text('pending'|'done') / result jsonb
-//   played_by / played_name / created_at / updated_at
-//
-//   challenger_avatar：出题者当时选的形象 id。答题页结算时用它显示「我 ↔ 对方」两个形象。
-//   出题者没设过形象 / 老记录没这一列 → 前端 resolve 成默认形象，不写默认值进库。
+//   · challenger_avatar 是出题者当时选的形象 id；老记录没这列时前端兜底成默认形象，不写默认值进库。
 const { cloud } = require('./cloud')
 
 // 出题者列表的默认展示名（写入失败的兜底）
@@ -104,11 +92,16 @@ function submitResult(id, payload) {
     .eq('id', id)
     .select('id')
     .then(function (res) {
-      if (res.error) return false
+      if (res.error) {
+        queuePending(id, patch)
+        return false
+      }
+      dropPending(id) // 之前可能排队过，这次通了就清掉
       // 0 行 = 已被别人答过（或行不存在）
       return Array.isArray(res.data) && res.data.length > 0
     })
     .catch(function () {
+      queuePending(id, patch)
       return false
     })
 }
@@ -135,9 +128,147 @@ function listMine(uid) {
     })
 }
 
+/**
+ * 删除一场我自己发起的挑战（「我的」页手工删除）。
+ *
+ * 只删得掉自己发起的行：RLS 的 delete 策略是 `challenger_id = auth.uid()`，
+ * 删别人的行会命中 0 行。返回 false 的两种含义（页面都提示「删除失败」即可）：
+ *   a) 云端 / 网络失败；b) 行已不存在 / 不属于自己。
+ * @param {string} id
+ * @returns {Promise<boolean>}
+ */
+function remove(id) {
+  if (!hasCloud() || !id) return Promise.resolve(false)
+  return cloud.database
+    .from('pk_challenges')
+    .delete()
+    .eq('id', id)
+    .select('id')
+    .then(function (res) {
+      if (res.error) return false
+      // 个别 SDK 版本的 delete 不回传行；拿不到 data 时以「无报错」为准
+      if (!Array.isArray(res.data)) return true
+      return res.data.length > 0
+    })
+    .catch(function () {
+      return false
+    })
+}
+
+/**
+ * 查询我收到的未读挑战（用于站内通知）。
+ * @param {string} uid 当前用户 id（未登录传空 → 返回 []）
+ * @returns {Promise<Array>} 未读挑战行，按时间倒序
+ */
+function listIncoming(uid) {
+  if (!hasCloud() || !uid) return Promise.resolve([])
+  return cloud.database
+    .from('pk_challenges')
+    .select('id, challenger_id, challenger_name, word_ids, created_at')
+    .eq('target_id', uid)
+    .eq('status', 'pending')
+    .eq('target_read', false)
+    .order('created_at', { ascending: false })
+    .limit(10)
+    .then(function (res) {
+      if (res.error || !Array.isArray(res.data)) return []
+      return res.data
+    })
+    .catch(function () {
+      return []
+    })
+}
+
+/**
+ * 被挑战者点开挑战后标记为已读。
+ * @param {string} id
+ * @returns {Promise<boolean>}
+ */
+function markRead(id) {
+  if (!hasCloud() || !id) return Promise.resolve(false)
+  return cloud.database
+    .from('pk_challenges')
+    .update({ target_read: true, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select('id')
+    .then(function (res) {
+      if (res.error) return false
+      return Array.isArray(res.data) && res.data.length > 0
+    })
+    .catch(function () {
+      return false
+    })
+}
+
+/**
+ * 没回传成功的成绩先存本机，下次启动补传。
+ * 只有「网络 / 云端报错」才进队列 —— 「被别人抢先」（update 命中 0 行）是正常结果，重试也没用。
+ */
+var PENDING_KEY = '__pk_pending'
+var MAX_PENDING = 5
+
+function readPending() {
+  try {
+    var list = wx.getStorageSync(PENDING_KEY)
+    return Array.isArray(list) ? list : []
+  } catch (e) {
+    return []
+  }
+}
+
+function writePending(list) {
+  try {
+    wx.setStorageSync(PENDING_KEY, list.slice(-MAX_PENDING))
+  } catch (e) {
+    /* 存不下就算了，不能影响结算 */
+  }
+}
+
+function queuePending(id, patch) {
+  var list = readPending().filter(function (x) {
+    return x && x.id !== id
+  })
+  list.push({ id: id, patch: patch })
+  writePending(list)
+}
+
+function dropPending(id) {
+  writePending(
+    readPending().filter(function (x) {
+      return x && x.id !== id
+    })
+  )
+}
+
+/** 启动时补传上次没送出去的成绩（没有待传的就直接返回） */
+function retryPending() {
+  var list = readPending()
+  if (!hasCloud() || list.length === 0) return Promise.resolve(false)
+  return list.reduce(function (chain, item) {
+    return chain.then(function () {
+      return cloud.database
+        .from('pk_challenges')
+        .update(item.patch)
+        .eq('id', item.id)
+        .select('id')
+        .then(function (res) {
+          // 成功、或者这场已经被别人答完（0 行）→ 都算「不用再传了」
+          if (!res.error) dropPending(item.id)
+        })
+        .catch(function () {
+          /* 还是不通，留着下次再试 */
+        })
+    })
+  }, Promise.resolve(true))
+}
+
 module.exports = {
   create: create,
   fetch: fetch,
   submitResult: submitResult,
   listMine: listMine,
+  listIncoming: listIncoming,
+  markRead: markRead,
+  remove: remove,
+  retryPending: retryPending,
 }

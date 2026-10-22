@@ -45,8 +45,12 @@ Page({
             if (week[i].dayIndex === today) current = week[i];
           }
           if (!current) current = week[0];
-          this.setData({ week: week, current: current, loading: false, videoUrl: '' });
-          return this.prepare(current);
+          // 同一天 + 已有可用地址 → 不重置 videoUrl，也不重新签名：
+          // 否则切后台 / 锁屏回来 onShow 一跑，正在看的动画会跳回开头
+          const same =
+            !!this.data.videoUrl && !this.data.videoError && !!this.data.current && !!current && this.data.current.dayIndex === current.dayIndex;
+          this.setData({ week: week, current: current, loading: false, videoUrl: same ? this.data.videoUrl : '' });
+          return same ? null : this.prepare(current);
         });
       })
       .catch(() => {

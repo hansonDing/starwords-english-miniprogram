@@ -32,6 +32,9 @@ if (grades[0].firstUnit !== 1) throw new Error('年级划分必须从单元 1 �
   }
 }
 
+// 运行时会展开成对象，顺序必须与这里的 KEY_ORDER 一致
+const KEY_ORDER = ['id', 'word', 'phonetic', 'meaning', 'phrase', 'phraseMeaning', 'difficulty', 'week', 'c'];
+
 const data = words.map((w) => {
   const cell = map[w.imageName];
   if (!cell) throw new Error(`${w.id} 在精灵图中没有对应格子`);
@@ -59,7 +62,17 @@ const banner =
 
 const out =
   banner +
-  'const WORDS = ' + JSON.stringify(data) + ';\n\n' +
+  // 存成「数组 + 键名表」而不是对象数组：键名（"phonetic": 之类）每个词要重复一遍，
+  // 200 词就白占约 16KB 主包，1600 词时是 130KB。展开成对象只在加载时跑一次。
+  'const KEYS = ' + JSON.stringify(KEY_ORDER) + ';\n' +
+  'const RAW = ' +
+  JSON.stringify(data.map((w) => KEY_ORDER.map((k) => w[k]))) +
+  ';\n' +
+  'const WORDS = RAW.map(function (r) {\n' +
+  '  const w = {};\n' +
+  '  for (let i = 0; i < KEYS.length; i++) w[KEYS[i]] = r[i];\n' +
+  '  return w;\n' +
+  '});\n\n' +
   '// 以下三个字段都不进数据，运行时展开 —— 它们全部由 id / 格子序号决定：\n' +
   '//   audio / phraseAudio：音频段就是按词条 id 索引的（见 utils/audioPackMap.js），\n' +
   '//     每个词重复存一遍要花约 7KB。\n' +

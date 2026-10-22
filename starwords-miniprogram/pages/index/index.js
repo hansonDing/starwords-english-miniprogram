@@ -3,6 +3,11 @@ const store = require('../../utils/store');
 const scheduler = require('../../utils/scheduler');
 const audio = require('../../utils/audio');
 const dailyVideo = require('../../utils/dailyVideo');
+const pkCloud = require('../../utils/pkCloud');
+const { cloud } = require('../../utils/cloud');
+
+// 已经弹过提示的那场挑战 id（避免每次回首页都重弹同一个「新的挑战」）
+const PROMPT_KEY = '__pk_prompted';
 
 Page({
   data: {
@@ -22,6 +27,10 @@ Page({
     streakText: '今天开始学习吧!',
     dailyTitle: '',
     dailyEnTitle: '',
+    // 未读挑战提示（首页弹窗用）
+    hasNewChallenge: false,
+    incomingName: '',
+    incomingId: '',
   },
 
   onShow() {
@@ -40,6 +49,7 @@ Page({
       /* ignore */
     }
     this.refresh();
+    this.checkIncoming();
   },
 
   onHide() {
@@ -91,6 +101,46 @@ Page({
       dailyTitle: todayShow.title,
       dailyEnTitle: todayShow.enTitle,
     });
+  },
+
+  checkIncoming() {
+    if (!cloud) return;
+    cloud.auth
+      .getSession()
+      .then(({ data: session }) => {
+        if (!session || !session.user) return;
+        return pkCloud.listIncoming(session.user.id);
+      })
+      .then((rows) => {
+        if (!Array.isArray(rows) || rows.length === 0) return;
+        const first = rows[0];
+        // 同一场挑战只弹一次：onShow 每次回首页都会跑到这里，不记一下就会反复弹，
+        // 而「稍后」在这个流程里什么都不做 —— 孩子会被同一个弹窗烦到关掉小程序。
+        // 记在本地存储（不是内存），冷启动也不再弹；点「稍后」仍可在「我的」页找到它。
+        try {
+          if (wx.getStorageSync(PROMPT_KEY) === first.id) return;
+          wx.setStorageSync(PROMPT_KEY, first.id);
+        } catch (e) {
+          /* 存储不可用就允许再弹一次，不影响主流程 */
+        }
+        this.setData({
+          hasNewChallenge: true,
+          incomingName: first.challenger_name || '小伙伴',
+          incomingId: first.id,
+        });
+        wx.showModal({
+          title: '新的挑战',
+          content: (first.challenger_name || '小伙伴') + ' 向你发起单词 PK，快来应战吧！',
+          confirmText: '去 PK',
+          cancelText: '稍后',
+          success: (r) => {
+            if (r.confirm && this.data.incomingId) {
+              wx.navigateTo({ url: '/pages/pk-play/pk-play?id=' + this.data.incomingId });
+            }
+          },
+        });
+      })
+      .catch(() => {});
   },
 
   onGoGrades() {

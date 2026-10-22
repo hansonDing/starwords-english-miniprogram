@@ -7,8 +7,10 @@ const MAX_DAILY_REVIEWS = 15;
 function localToday(now) {
   now = now || new Date();
   const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
+  // ⚠️ 不用 String.padStart —— 它是 ES2017，老 iOS 的 JSCore 没有这个方法，
+  //    而首页 onShow 就会调到这里，缺了直接白屏。手工补零零成本。
+  const m = ('0' + (now.getMonth() + 1)).slice(-2);
+  const d = ('0' + now.getDate()).slice(-2);
   return y + '-' + m + '-' + d;
 }
 

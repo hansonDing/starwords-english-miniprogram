@@ -603,13 +603,12 @@ console.log('[4k] 复习错题本与记录分页');
   }
 }
 
-/* ---------- 4l. PK 挑战（发起 → 分享 → 作答 → 本地入账 → 回传）----------
-   这里锁两处**静默坏掉**的地方（界面都正常，只是功能不生效或白丢东西）：
+/* ---------- 4l. PK 挑战（发起 → 站内通知 → 作答 → 本地入账 → 回传）----------
+   这里锁几处**静默坏掉**的地方（界面都正常，只是功能不生效或白丢东西）：
      ① 结算顺序 —— store.creditPkStars 必须在 pkCloud.submitResult **之前**。
         反过来的话网络一挂，孩子明明答完了却拿不到星星（而界面照样显示成绩）。
-     ② 分享时机 —— <button open-type="share"> 必须在拿到 pkId 之后才渲染，
-        否则 onShareAppMessage 拼出的 path 是 `/pages/pk-play/pk-play?id=`，
-        对方点开直接「挑战不存在」。
+     ② 站内通知 —— pk-create 生成挑战后要走「发送挑战」按钮，并把未读状态落库；
+        mine / index 要查询我收到的未读挑战；pk-play 加载成功后要 markRead。
    行为验证另跑 `node pk-check.cjs` 与 `node pk-runtime-check.cjs`。 */
 console.log('[4l] PK 挑战');
 {
@@ -623,11 +622,12 @@ console.log('[4l] PK 挑战');
   const playWxml = read('pages/pk-play/pk-play.wxml');
   const mineSrc = read('pages/mine/mine.js');
   const mineWxml = read('pages/mine/mine.wxml');
+  const indexSrc = read('pages/index/index.js');
 
   const missingPk = ['buildQuestions', 'scoreQuiz', 'makeChallengeId', 'isPlayable'].filter(
     (n) => pkSrc.indexOf(n) === -1
   );
-  const missingCloud = ['function create', 'function fetch', 'function submitResult', 'function listMine'].filter(
+  const missingCloud = ['function create', 'function fetch', 'function submitResult', 'function listMine', 'function listIncoming', 'function markRead', 'function remove'].filter(
     (n) => cloudSrc.indexOf(n) === -1
   );
   // ⚠️ 顺序检查必须只看 finish() **方法体内部**：
@@ -643,11 +643,24 @@ console.log('[4l] PK 挑战');
 
   // 老 iOS 引擎解析不了的语法（与工程硬约束一致）
   const badSyntax = [];
-  for (const f of ['utils/pk.js', 'utils/pkCloud.js', 'pages/pk-create/pk-create.js', 'pages/pk-play/pk-play.js']) {
+  for (const f of ['utils/pk.js', 'utils/pkCloud.js', 'pages/pk-create/pk-create.js', 'pages/pk-play/pk-play.js', 'pages/mine/mine.js', 'pages/index/index.js']) {
     const src = read(f);
     if (/\?\./.test(src)) badSyntax.push(f + ' 用了可选链 ?.');
     if (/globalThis/.test(src)) badSyntax.push(f + ' 用了裸 globalThis');
     if (/\{\s*\.\.\./.test(src) || /\[\s*\.\.\./.test(src)) badSyntax.push(f + ' 用了展开语法');
+  }
+
+  // 删除策略的迁移 SQL：放在仓库的 cloudbase/migrations 下。
+  // 读不到时不能直接抛（快照仓库 / 单独拷出 scripts 目录都会缺这个文件），
+  // 收敛成空串让下面的断言给出可读的失败原因。
+  let delPolicySql = '';
+  try {
+    delPolicySql = fs.readFileSync(
+      path.join(root, '..', 'cloudbase', 'migrations', '20261022190000_add_pk_delete_policy.sql'),
+      'utf8'
+    );
+  } catch (e) {
+    delPolicySql = '';
   }
 
   if (missingPk.length) {
@@ -658,12 +671,22 @@ console.log('[4l] PK 挑战');
     fail('store.js 缺少 pkRewarded / creditPkStars（PK 星星账本与「每场只结算一次」防刷）');
   } else if (app.pages.indexOf('pages/pk-create/pk-create') === -1 || app.pages.indexOf('pages/pk-play/pk-play') === -1) {
     fail('app.json 未注册 pk-create / pk-play 页面');
+  } else if (!/onSendChallenge\s*\(/.test(createSrc)) {
+    fail('pk-create.js 缺少 onSendChallenge（指定对手时走站内发送）');
+  } else if (!/hasTarget/.test(createSrc) || createWxml.indexOf('{{!hasTarget}}') === -1) {
+    fail('pk-create 缺少「指定对手 / 开放式挑战」分叉（hasTarget 没接进模板）');
   } else if (createWxml.indexOf('open-type="share"') === -1) {
-    fail('pk-create.wxml 缺少 <button open-type="share">（没有它转发面板根本拉不起来）');
+    fail('pk-create.wxml 缺少开放式挑战的 <button open-type="share">（「发起单词PK」要能转发给微信好友）');
   } else if (!/onShareAppMessage\s*\(/.test(createSrc) || createSrc.indexOf("'/pages/pk-play/pk-play?id='") === -1) {
-    fail("pk-create.js 的 onShareAppMessage 未把 path 指向 pk-play?id=<pkId>");
+    fail("pk-create.js 的 onShareAppMessage 未把开放式挑战的卡片指向 pk-play?id=<pkId>");
   } else if (!/mode:\s*'ready'/.test(createSrc) || !/wx:elif="\{\{mode === 'ready'\}\}"/.test(createWxml)) {
-    fail('pk-create 缺少「先写云端拿到 pkId，再显示分享按钮」的状态机');
+    fail('pk-create 缺少「先写云端拿到 pkId，再显示发送按钮」的状态机');
+  } else if (indexSrc.indexOf('checkIncoming') === -1) {
+    fail('index.js 未在首页检查未读挑战（checkIncoming）');
+  } else if (mineSrc.indexOf('loadIncoming') === -1 || mineWxml.indexOf('incoming-card') === -1) {
+    fail('mine 页缺少「新的挑战」未读通知区块');
+  } else if (playSrc.indexOf('pkCloud.markRead') === -1) {
+    fail('pk-play.js 未在加载成功后调用 pkCloud.markRead（未读提示无法消除）');
   } else if (playWxml.indexOf('bolt') === -1 || playWxml.indexOf('dark') === -1) {
     fail('pk-play.wxml 缺少答错反馈（闪电 bolt / 小人变黑 dark）');
   } else if (ci === -1 || si === -1) {
@@ -676,10 +699,20 @@ console.log('[4l] PK 挑战');
     fail('mine 页缺少「挑战」入口（排行榜 → 发起 PK）');
   } else if (mineWxml.indexOf('pkList') === -1 || mineSrc.indexOf('listMine') === -1) {
     fail('mine 页未展示「我发起的 PK」结果列表');
+  } else if (cloudSrc.indexOf(".from('pk_challenges')\n    .delete()") === -1 && !/from\('pk_challenges'\)[\s\S]{0,80}\.delete\(\)/.test(cloudSrc)) {
+    fail('pkCloud.remove 没有真正走 .delete()（只改本地列表的话，下拉/换设备会复活）');
+  } else if (!/challenger_id\s*=\s*auth\.uid\(\)/.test(delPolicySql)) {
+    fail('缺少 DELETE 策略迁移（cloudbase/migrations/20261022190000_add_pk_delete_policy.sql）：没有 delete 策略时，前端删除会被 RLS 静默挡掉');
+  } else if (mineWxml.indexOf('wx:for="{{pkShown}}"') === -1 || mineSrc.indexOf('onTogglePkExpand') === -1) {
+    fail('mine 页「我发起的 PK」未做折叠：wx:for 必须绑 pkShown（绑 pkList 等于无限向下堆）');
+  } else if (mineWxml.indexOf('onDeletePk') === -1 || mineSrc.indexOf('onDeletePk') === -1) {
+    fail('mine 页缺少手工删除入口（onDeletePk）');
+  } else if (!/\.limit\(/.test(cloudSrc.slice(cloudSrc.indexOf('function listMine'), cloudSrc.indexOf('function listIncoming')))) {
+    fail('listMine 少了 .limit() —— 会变成全量拉取');
   } else if (badSyntax.length) {
     fail('PK 相关文件含老引擎无法解析的语法：' + badSyntax.join('；'));
   } else {
-    pass('PK 接线正确（出题 → 分享 → 作答 → 本地入账 → 回传，且分享时机正确）');
+    pass('PK 接线正确（出题 → 站内通知 → 作答 → 本地入账 → 回传，且站内通知闭环完整）');
   }
 }
 
@@ -890,6 +923,24 @@ console.log('[4n] 学习结算页（静态，无庆祝动画）');
   }
 }
 
+/* ---------- 4o. 交互去重（重复触发类的静默 bug）----------
+ * 两个都只在「用户多点一下 / 多回一次」时才现形，预览走一遍根本碰不到：
+ *   ① 首页 onShow 每次都查未读挑战 → 同一个弹窗反复弹，而「稍后」什么都不做。
+ *   ② 复习页重复点当前 tab → 整套题被重置，但复习档位已经推进过了。
+ */
+console.log('[4o] 交互去重');
+{
+  const idxSrc = fs.readFileSync(path.join(root, 'pages', 'index', 'index.js'), 'utf8');
+  const revSrc = fs.readFileSync(path.join(root, 'pages', 'review', 'review.js'), 'utf8');
+  if (idxSrc.indexOf('__pk_prompted') === -1 || !/getStorageSync\(PROMPT_KEY\)/.test(idxSrc)) {
+    fail('index.js 未记录「已弹过的挑战 id」，同一个「新的挑战」弹窗会每次回首页都重弹');
+  } else if (!/if\s*\(mode\s*===\s*this\.data\.mode\)\s*return/.test(revSrc)) {
+    fail('review.js 的 onModeChange 没有「重复点当前 tab 直接返回」，会把答到一半的题重置掉');
+  } else {
+    pass('首页挑战弹窗 / 复习 tab 切换都做了重复触发保护');
+  }
+}
+
 /* ---------- 5. wxml 事件处理函数都有定义 ---------- */
 console.log('[5] 事件处理函数');
 let missingHandler = 0;
@@ -957,6 +1008,33 @@ for (const f of routeFiles) {
   }
 }
 if (!routeBad) pass(`${routeSeen} 处页面跳转 / 分享路径全部合法（tabBar ${tabPaths.length} 页）`);
+
+/* ---------- 5c. 全项目 ES2017+ API 扫描 ----------
+ * 比语法检查更隐蔽的一类：语法合法、开发者工具也跑得动，但老 iOS 的 JSCore 里
+ * **这个方法根本不存在**，一调就是 `undefined is not a function` → 页面白屏。
+ * 2026-10-22 就在这里抓到 `String.padStart`（scheduler.localToday 一进首页就调）。
+ * 只扫 pages/ 与 utils/：lib/ 是云 SDK 压缩产物，含同名 API 字样会误报。
+ */
+console.log('[5c] ES2017+ API');
+const ES2017_APIS = [
+  ['\\.padStart\\s*\\(', 'String.prototype.padStart'],
+  ['\\.padEnd\\s*\\(', 'String.prototype.padEnd'],
+  ['Object\\.(values|entries|fromEntries)\\s*\\(', 'Object.values/entries'],
+  ['Array\\.prototype\\.(flat|flatMap)|\\]\\.flat(Map)?\\s*\\(', 'Array.prototype.flat/flatMap'],
+  ['\\?\\.', '可选链 ?.'],
+  ['\\?\\?', '空值合并 ??'],
+];
+let esBad = 0;
+for (const f of routeFiles) {
+  const src = fs.readFileSync(f, 'utf8');
+  for (const [re, name] of ES2017_APIS) {
+    if (new RegExp(re).test(src)) {
+      fail(`${rel(f)} 使用了 ${name}（老 iOS JSCore 没有，会白屏）`);
+      esBad++;
+    }
+  }
+}
+if (!esBad) pass(`${routeFiles.length} 个业务文件均未使用 ES2017+ API`);
 
 /* ---------- 6. JSON 可解析 + 关键配置 ---------- */
 console.log('[6] 配置');

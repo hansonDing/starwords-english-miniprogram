@@ -1,19 +1,21 @@
-// 发起 PK：勾选我学过的单词 → 生成挑战（写入云端）→ 用 button open-type="share" 转发
+// 发起 PK：勾选我学过的单词 → 生成挑战（写入云端）
 //
-// ⚠️ 小程序没有服务端推送，出题者**没法把 PK 直接送到对方手机上**。
-//    唯一通路是分享卡片，由出题者手动转发给那个人。所以从排行榜点进来的
-//    target/name 只是「标记挑战对象 + 让卡片带上对方名字」，不保证对方真的收到。
-//    UI 文案必须诚实（ready 态会写明「转发给他，他点开才能作答」），
-//    否则用户会以为点完按钮对方就收到了。
+// 两条路径靠 URL 上有没有 target 区分，**出口完全不同**：
+//  ① 指定对手（排行榜「挑战」进来，带 target）→ 站内发送。对方下次打开小程序
+//     在首页弹窗 /「我的」页「新的挑战」里看到，不依赖微信转发。
+//  ② 开放式挑战（「我的」→「发起单词PK」，无 target）→ 微信转发。没有 target_id
+//     站内通知送不到任何人，唯一通路就是分享卡片，谁点开谁答。
 //
-// ⚠️ 另一条硬约束：分享卡片的 path 在**点击转发按钮的那一刻**由 onShareAppMessage 产出，
-//    所以必须先把挑战写进云端拿到 id，再显示分享按钮。pkId 为空时绝不显示 share 按钮。
+// ⚠️ ① 的卡片不能指向这场 PK：那等于把「专门考某人」的题泄到群里，谁先点开谁替他答了
+//    （数据库先到先得，他反而永远答不了）。所以 ① 的转发卡片只回首页。
+// ⚠️ ② 的 path 在点转发那一刻产出，必须先写云端拿到 id 再显示按钮；pkId 为空绝不拼 `?id=`。
 const { getWordById } = require('../../utils/words');
 const { cloud } = require('../../utils/cloud');
 const store = require('../../utils/store');
 const pk = require('../../utils/pk');
 const pkCloud = require('../../utils/pkCloud');
 const leaderboard = require('../../utils/leaderboard');
+const share = require('../../utils/share');
 
 // 昵称经 encodeURIComponent 传参后可能已被框架解码过一次，再解码会抛错（含 % 时）
 function safeDecode(v) {
@@ -27,9 +29,10 @@ function safeDecode(v) {
 
 Page({
   data: {
-    mode: 'pick', // pick（选题）| ready（待分享）| fail（失败）
+    mode: 'pick', // pick（选题）| ready（待发送/待转发）| fail（失败）
     targetId: '',
     targetName: '',
+    hasTarget: false, // true = 指定对手（站内发送）；false = 开放式挑战（微信转发）
     headTitle: '发起 PK',
     candidates: [], // [{ id, word, meaning, phonetic, picked }]
     pickedCount: 0,
@@ -49,6 +52,9 @@ Page({
     this.setData({
       targetId,
       targetName,
+      // 只有真的带了对手 uid 才算「指定对手」。昵称单独传进来但 uid 为空时，
+      // 站内通知依然送不到，必须按开放式挑战处理（否则又是一个假成功）。
+      hasTarget: !!targetId,
       headTitle: targetName ? '挑战 ' + targetName : '发起 PK',
     });
     wx.setNavigationBarTitle({ title: targetName ? '挑战 ' + targetName : '发起 PK' });
@@ -181,16 +187,27 @@ Page({
       });
   },
 
-  /* ---------- 分享 ---------- */
-  // 覆盖 app.js 注入的默认分享：把 path 指向这场 PK。
-  // 必须用 this.data.pkId（ready 态才渲染分享按钮，所以这里不会为空）。
+  /* ---------- 转发（只有开放式挑战才指向这场 PK）---------- */
+  // app.js 的 share.attach 只在页面没定义时才注入，这里一旦定义就全归自己管，
+  // 所以必须自己兜住「还没生成挑战」的情形 —— 回首页，绝不产出坏链接。
   onShareAppMessage() {
-    const nick = leaderboard.getNickname();
-    const who = this.data.targetName || '小伙伴';
+    if (this.data.hasTarget || !this.data.pkId) return share.appMessage();
     return {
-      title: nick + ' 用单词考你，' + who + ' 敢来 PK 吗？',
+      title: leaderboard.getNickname() + ' 用单词考你，敢来 PK 吗？',
       path: '/pages/pk-play/pk-play?id=' + this.data.pkId,
     };
+  },
+
+  /* ---------- 发送挑战（仅指定对手）---------- */
+  onSendChallenge() {
+    if (!this.data.pkId) return;
+    // 开放式挑战没有 target_id，点这里说「已发送」就是骗人
+    if (!this.data.hasTarget) return;
+    const name = this.data.targetName || '小伙伴';
+    wx.showToast({ title: '已发送给 ' + name, icon: 'none' });
+    setTimeout(() => {
+      wx.navigateBack();
+    }, 1200);
   },
 
   /* ---------- 导航 ---------- */

@@ -46,25 +46,41 @@
         <text>{{creating ? '正在生成…' : '生成挑战'}}</text>
       </view>
       <text class="foot-hint" wx:if="{{!canCreate}}">至少选 {{minQuestions}} 个单词</text>
-      <text class="foot-hint" wx:else>生成后转发给小伙伴，他点开就能答题</text>
+      <text class="foot-hint" wx:elif="{{hasTarget}}">生成后点「发送挑战」，他自己打开小程序就能看到</text>
+      <text class="foot-hint" wx:else>生成后可转发给微信好友，他点开卡片就能答题</text>
     </block>
   </block>
 
-  <!-- ============ ② 已生成，待分享 ============ -->
+  <!-- ============ ② 已生成：指定对手走站内发送，开放式挑战走微信转发 ============ -->
   <block wx:elif="{{mode === 'ready'}}">
     <view class="card ready-card">
       <text class="ready-emoji">⚔️</text>
       <text class="ready-title">挑战已生成！</text>
       <text class="ready-sub">一共 {{questionCount}} 道题</text>
-      <view class="ready-flow">
-        <text class="ready-step">① 点下面的按钮</text>
-        <text class="ready-step">② 在微信里选小伙伴或群，发出去</text>
-        <text class="ready-step">③ 他点开卡片就能答题</text>
-      </view>
-      <text class="ready-warn">⚠️ 转发给他，他点开才能作答</text>
+
+      <!-- 指定对手 -->
+      <block wx:if="{{hasTarget}}">
+        <view class="ready-flow">
+          <text class="ready-step">① 点「发送挑战」</text>
+          <text class="ready-step">② 他打开小程序就能看到</text>
+          <text class="ready-step">③ 答完你在这看成绩</text>
+        </view>
+        <text class="ready-warn">站内送达，不用转发微信</text>
+      </block>
+
+      <!-- 开放式挑战 -->
+      <block wx:else>
+        <view class="ready-flow">
+          <text class="ready-step">① 点下面的按钮</text>
+          <text class="ready-step">② 选好友或群发出去</text>
+          <text class="ready-step">③ 他点开卡片就能答</text>
+        </view>
+        <text class="ready-warn">转发给谁，谁就能答</text>
+      </block>
     </view>
 
-    <button class="share-btn" open-type="share"><text>转发给他，开始 PK</text></button>
+    <button class="share-btn" open-type="share" wx:if="{{!hasTarget}}"><text>转发给微信好友</text></button>
+    <view class="btn-primary share-btn" wx:else bindtap="onSendChallenge"><text>发送挑战</text></view>
     <view class="btn-ghost sub-btn" bindtap="onBackToPick"><text>换个题目</text></view>
     <text class="foot-hint">他答完之后，可以在「我的」页看到成绩</text>
   </block>

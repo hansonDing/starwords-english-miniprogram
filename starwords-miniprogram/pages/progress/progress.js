@@ -61,7 +61,7 @@ Page({
   onReset() {
     wx.showModal({
       title: '重置学习进度',
-      content: '将清空所有学习记录、星星和成就，无法恢复。确定要重置吗？',
+      content: '将清空所有学习记录、星星、成就和星星形象，无法恢复。确定要重置吗？',
       confirmText: '重置',
       confirmColor: '#ef4444',
       success: (res) => {

@@ -151,6 +151,9 @@ Page({
       flashing: false,
       floatStar: false,
     });
+    // ⚠️ 不在这里 markRead：点开≠作答。若一进来就标已读，而「我收到的挑战」只查
+    // target_read = false，孩子点开看一眼就返回后这场挑战会**永久消失**（出题者视角还在等他答）。
+    // 标已读放在 finish()，即真正答完之后。
   },
 
   /* ---------- 选答案 ---------- */
@@ -216,6 +219,8 @@ Page({
   /* ---------- 结算 ---------- */
   finish() {
     const result = pk.scoreQuiz(this.data.questions, this.answers);
+    // 答完才算「已读」：这场挑战从「我收到的挑战」里消失，正是此刻该发生的事
+    if (this.pkId) pkCloud.markRead(this.pkId);
     // ⚠️ 先入账（纯本地，不依赖网络）
     const earned = store.creditPkStars(this.pkId, result.earnedStars);
     this.setData({

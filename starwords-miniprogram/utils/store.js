@@ -27,6 +27,9 @@ const DEFAULT_PROGRESS = {
   // 孩子选的星星形象 id（见 utils/avatar.js）。'' = 还没选过，
   // 此时 getAvatar() 会兜底成默认形象，hasAvatar() 为 false 以便再引导一次。
   avatarId: '',
+  // 本地最后一次**主动改动**的时间戳（ms），云同步靠它判断「谁更新」。0 = 老存档（未知）。
+  // ⚠️ 不能用词条上的 lastAttemptAt：那只在学新词时变，得星 / 换形象 / 换年级都不动它。
+  updatedAt: 0,
 };
 
 /** PK 去重记录的保留条数上限（云同步 payload 不能无限膨胀） */
@@ -69,6 +72,8 @@ function normalizeProgress(p) {
   }
   // 版本号只升不降 —— 否则云端那份（已是 3）会被本地老档的版本号拉回去
   if (!(Number(p.progressVersion) >= 3)) p.progressVersion = 3;
+  // 时间戳只认数字；脏数据一律当「未知」（0），交给 pullFromCloud 的保守分支处理
+  p.updatedAt = Number(p.updatedAt) > 0 ? Number(p.updatedAt) : 0;
   return p;
 }
 
@@ -86,19 +91,26 @@ function loadProgress() {
 let current = loadProgress();
 let cloudRowId = null;
 let syncTimer = null;
+// 家长主动「重置进度」时置 true：这一次允许把空档推上云端。
+// 否则下面的「空档拒推」保险会把重置拦下来，下次启动又把旧进度拉回来 —— 重置等于没做。
+let allowEmptyPush = false;
 
 function getProgress() {
   return current;
 }
 
-function notify() {
+function notify(opts) {
+  // 只有**本地主动改动**才推进 updatedAt；从云端拉回来的不算（传 { remote: true }），
+  // 否则拉完时间戳变成"现在"，之后永远判本地更新，云端再也不会被采纳。
+  const remote = !!(opts && opts.remote);
+  if (!remote) current.updatedAt = Date.now();
   // 各页面在 onShow 里重新读取；这里只负责持久化与云同步
   try {
     wx.setStorageSync(STORAGE_KEY, JSON.stringify(current));
   } catch (e) {
     /* 存储失败不影响学习 */
   }
-  scheduleCloudSync();
+  if (!remote) scheduleCloudSync();
 }
 
 function setProgress(updater) {
@@ -391,6 +403,7 @@ function completeDailySession(maxUnit, date) {
 
 function resetProgress() {
   cloudRowId = null;
+  allowEmptyPush = true; // 这一次要允许空档覆盖云端，见 allowEmptyPush 的注释
   setProgress(JSON.parse(JSON.stringify(DEFAULT_PROGRESS)));
 }
 
@@ -433,12 +446,15 @@ function syncToCloud() {
       const payload = { data: current, updated_at: new Date().toISOString() };
       const findRow = cloudRowId
         ? Promise.resolve({ data: [{ id: cloudRowId }] })
-        : cloud.database.from('learning_progress').select('id').limit(1);
+        : cloud.database.from('learning_progress').select('id, data').limit(1);
       return findRow.then(({ data, error }) => {
         if (error) return null;
         const rows = Array.isArray(data) ? data : [];
         if (rows.length > 0) {
           cloudRowId = rows[0].id;
+          // ⚠️ 最后一道保险：本地空档（新设备 / 清了缓存）而云端有记录时**拒绝推送** —— 推上去不可逆。
+          const remoteWords = rows[0].data && rows[0].data.words;
+          if (!allowEmptyPush && !current.words.length && Array.isArray(remoteWords) && remoteWords.length > 0) return null;
           return cloud.database
             .from('learning_progress')
             .update(payload)
@@ -448,6 +464,8 @@ function syncToCloud() {
               if (Array.isArray(updated) && updated.length === 0) {
                 // RLS 拦截或行不存在：重置行缓存，下次重新查询
                 cloudRowId = null;
+              } else {
+                allowEmptyPush = false; // 这次专供重置的放行已经用掉了
               }
             });
         }
@@ -459,7 +477,11 @@ function syncToCloud() {
     .catch(() => null);
 }
 
-/** 登录后拉取云端进度：仅当云端比本地新时覆盖 */
+/**
+ * 拉取云端进度：只比两边 updatedAt 的大小。任一方缺这个字段（老存档 / 老云档）就当「未知」
+ * **不动本地** —— 少拉一次只是这次没同步上，覆盖错一次是永久丢数据。
+ * 唯一例外：本地一个词都没学过（新设备 / 清了缓存）→ 云端一定更全，直接拉。
+ */
 function pullFromCloud() {
   return getSession()
     .then((session) => {
@@ -474,18 +496,16 @@ function pullFromCloud() {
           const row = data[0];
           cloudRowId = row.id;
           const remote = row.data;
-          if (remote && remote.progressVersion && remote.words) {
-            const remoteAt = row.updated_at ? new Date(row.updated_at).getTime() : 0;
-            const localAt = current.words.length
-              ? Math.max.apply(null, current.words.map((w) => (w.lastAttemptAt ? new Date(w.lastAttemptAt).getTime() : 0)))
-              : 0;
-            if (remoteAt > localAt) {
-              current = normalizeProgress(Object.assign(JSON.parse(JSON.stringify(DEFAULT_PROGRESS)), remote));
-              notify();
-              return 'pulled';
-            }
-          }
-          return null;
+          if (!remote || !remote.progressVersion || !Array.isArray(remote.words)) return null;
+          const remoteAt = Number(remote.updatedAt) > 0 ? Number(remote.updatedAt) : 0;
+          const localAt = Number(current.updatedAt) > 0 ? Number(current.updatedAt) : 0;
+          const localEmpty = !current.words.length;
+          const takeRemote = localEmpty || (remoteAt > 0 && localAt > 0 && remoteAt > localAt);
+          if (!takeRemote) return null;
+          current = normalizeProgress(Object.assign(JSON.parse(JSON.stringify(DEFAULT_PROGRESS)), remote));
+          current.updatedAt = remoteAt || current.updatedAt;
+          notify({ remote: true });
+          return 'pulled';
         });
     })
     .catch(() => null);

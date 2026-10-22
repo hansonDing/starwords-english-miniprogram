@@ -76,6 +76,9 @@ Page({
   matchTimer: null,
 
   onLoad() {
+    // alive + playToken：页面卸载 / 换词后，旧朗读链不能再往下播（见 autoRead）
+    this.alive = true;
+    this.playToken = 0;
     const progress = store.getProgress();
     // 今天学哪个单元：从已学记录推导（不再看 currentWeek —— 那是「第几个学习日」）
     const grade = store.currentGrade();
@@ -115,12 +118,21 @@ Page({
     });
     this.initRecorder();
     // 进入卡片自动朗读：先读单词，再读例句
-    wx.nextTick(() => this.playWord().then(() => this.playPhrase({ silent: true })));
+    wx.nextTick(() => this.autoRead());
+  },
+
+  onHide() {
+    audio.stop();
   },
 
   onUnload() {
+    // ⚠️ 必须让朗读链失效：audio.stop() 会把上一段的 Promise 立刻 resolve，
+    //    不加这道闸，`.then(playPhrase)` 会在页面卸载**之后**才执行 —— 声音串到下一个页面。
+    this.alive = false;
+    this.playToken += 1;
     this.clearMatchTimer();
     audio.stop();
+    this.stopRecorder();
     if (this.playbackCtx) {
       try {
         this.playbackCtx.destroy();
@@ -128,6 +140,15 @@ Page({
         /* ignore */
       }
     }
+  },
+
+  // 自动朗读：先单词后例句。换词 / 卸载后不再补播例句（token 变了就放弃）
+  autoRead() {
+    const token = ++this.playToken;
+    this.playWord().then(() => {
+      if (!this.alive || token !== this.playToken) return;
+      this.playPhrase({ silent: true });
+    });
   },
 
   /* ---------- 发音 ---------- */
@@ -181,9 +202,14 @@ Page({
       this.recorderType = 'plugin';
       var self = this;
       mgr.onStart = function () {
-        self.setData({ recording: true, recorded: false, recordPath: '' });
+        self.onRecStart();
       };
       mgr.onStop = function (res) {
+        // 卸载 / 主动取消的录音不评分：迟到的结果会把星算到下一个词上
+        if (!self.alive || self.skipStop) {
+          self.skipStop = false;
+          return;
+        }
         self.handlePluginStop(res || {});
       };
       mgr.onError = function (res) {
@@ -200,9 +226,14 @@ Page({
     this.recorderType = 'local';
     var self = this;
     this.recorder.onStart(function () {
-      self.setData({ recording: true, recorded: false, recordPath: '' });
+      self.onRecStart();
     });
     this.recorder.onStop(function (res) {
+      // 卸载 / 主动取消的录音不评分：迟到的结果会把星算到下一个词上
+      if (!self.alive || self.skipStop) {
+        self.skipStop = false;
+        return;
+      }
       var path = res && res.tempFilePath ? res.tempFilePath : '';
       self.setData({ recording: false, recorded: !!path, recordPath: path });
       self.recordPath = path;
@@ -255,8 +286,39 @@ Page({
     this.initLocalRecorder();
   },
 
+  // 录音真正开始（插件 / 本地录音器共用）
+  onRecStart() {
+    this.setData({ recording: true, recorded: false, recordPath: '' });
+    // 孩子「点一下就松手」时，停止信号比 onStart 先到（start → onStart 有 50~300ms 延迟）。
+    // 不在这里补一刀，那次停止会被丢掉，录音一路录满 6 秒，啥也没说也能拿 2 星。
+    if (this.pendingStop) {
+      this.pendingStop = false;
+      try {
+        this.recorder.stop();
+      } catch (e) {
+        /* ignore */
+      }
+    }
+  },
+
+  // 离开页面 / 换词时收掉正在进行的录音
+  stopRecorder() {
+    this.pendingStop = false;
+    if (!this.data.recording) return;
+    this.setData({ recording: false });
+    // onStop 是异步回来的，这次的结果已经不属于当前这个词了 —— 让回调跳过一次
+    this.skipStop = true;
+    try {
+      this.recorder.stop();
+    } catch (e) {
+      /* ignore */
+    }
+  },
+
   onStartRecord() {
     if (this.data.recording) return;
+    // 新的一次录音：把「跳过一次回调」的标记清掉（万一上次的 onStop 没回来，别把它带到这次）
+    this.skipStop = false;
     // 重录 / 新录：先清掉上一次的星级反馈，避免旧星星残留
     this.setData({ recorded: false, spokeWell: false, autoLevel: '', autoStarCount: 0, autoMsg: '', recordPath: '' });
     if (this.recorderType === 'plugin') {
@@ -273,7 +335,11 @@ Page({
   },
 
   onStopRecord() {
-    if (!this.data.recording) return;
+    // 还没真正开始 → 记下「松手了」，等 onStart 一到立刻停（见 onRecStart）
+    if (!this.data.recording) {
+      this.pendingStop = true;
+      return;
+    }
     this.recorder.stop();
   },
 
@@ -448,6 +514,7 @@ Page({
   },
 
   onNextWord() {
+    this.stopRecorder(); // 换词前收掉还在进行的录音，否则它会一直录到 6 秒再评分
     const word = this.data.word;
     const score = this.wordScores[word.id] || SPEAK_SKIP;
     store.markWordLearned(word.id, score);
@@ -536,7 +603,7 @@ Page({
       weekWordsView: view,
       finishedCount,
     });
-    wx.nextTick(() => this.playWord().then(() => this.playPhrase({ silent: true })));
+    wx.nextTick(() => this.autoRead());
   },
 
   /* ---------- 结算页（静态，零动画、不联网、不占包体） ---------- */

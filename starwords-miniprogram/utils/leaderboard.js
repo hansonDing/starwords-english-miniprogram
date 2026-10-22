@@ -48,7 +48,9 @@ function buildRow(uid) {
     current_week: p.currentWeek || 1,
     // 年级 id（可空列，老数据不受影响）。榜单仍按已学词数排序。
     grade_id: store.currentGrade().id,
-    stars: learned,
+    // 真实星星余额。以前写的是 learned（已学词数），语义错位 —— 榜单目前不展示，
+    // 但一旦展示就是「学了 5 个词显示 5 颗星」，跟「我的」页的余额对不上。
+    stars: store.getStarBalance(),
     updated_at: new Date().toISOString(),
   }
 }

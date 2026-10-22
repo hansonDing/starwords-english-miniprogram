@@ -299,6 +299,12 @@ const fakePkCloud = {
   listMine: function () {
     return Promise.resolve([]);
   },
+  listIncoming: function () {
+    return Promise.resolve([]);
+  },
+  markRead: function () {
+    return Promise.resolve(true);
+  },
 };
 const fakeLeaderboard = {
   getNickname: function () {

@@ -112,6 +112,9 @@ Page({
   /* ---------- 模式切换 ---------- */
   onModeChange(e) {
     const mode = e.currentTarget.dataset.mode;
+    // 重复点当前 tab 直接忽略：否则会把正在答的那一轮整套重置并重新抽题，
+    // 孩子刚答的进度凭空消失（复习档位却已经推进过了）
+    if (mode === this.data.mode) return;
     this.setData({ mode, reviewDone: false, spellDone: false, quizIndex: -1, spellIndex: -1, quizAnswered: false, wrongList: [] });
     if (mode === 'quick') this.startQuickQuiz();
     if (mode === 'spelling') this.startSpelling();

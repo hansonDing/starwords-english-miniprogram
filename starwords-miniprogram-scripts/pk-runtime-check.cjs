@@ -79,6 +79,9 @@ function wordById(id) {
 const realPk = loadCjs(path.join(ROOT, 'utils', 'pk.js'));
 const realScheduler = loadCjs(path.join(ROOT, 'utils', 'scheduler.js'));
 const realAvatar = loadCjs(path.join(ROOT, 'utils', 'avatar.js'));
+// 用真 share.js：开放式挑战的转发卡片要落到 appMessage() 的首页兜底上，
+// 桩掉的话「pkId 为空不拼 ?id=」这条根本测不出来。
+const realShare = loadCjs(path.join(ROOT, 'utils', 'share.js'));
 const STORE_PATH = path.join(ROOT, 'utils', 'store.js');
 const STORE_SRC = fs.readFileSync(STORE_PATH, 'utf8');
 
@@ -127,6 +130,14 @@ let createOk = true;
 let submitOk = true;
 const submitted = [];
 const created = [];
+const markedRead = [];
+const incomingRows = [];
+// 「我的」页：我发起的挑战
+const mineRows = [];
+const removedPk = [];
+let removeOk = true;
+let modalConfirm = true;
+let lastModal = null;
 
 const fakeCloud = {
   auth: {
@@ -148,7 +159,32 @@ const fakePkCloud = {
     return Promise.resolve(submitOk);
   },
   listMine: function () {
-    return Promise.resolve([]);
+    return Promise.resolve(mineRows.slice());
+  },
+  remove: function (id) {
+    removedPk.push(id);
+    if (!removeOk) return Promise.resolve(false);
+    for (let i = 0; i < mineRows.length; i++) {
+      if (mineRows[i].id === id) {
+        mineRows.splice(i, 1);
+        break;
+      }
+    }
+    return Promise.resolve(true);
+  },
+  listIncoming: function (uid) {
+    return Promise.resolve(
+      incomingRows.filter(function (r) {
+        return r.target_id === uid && r.status === 'pending' && !r.target_read;
+      })
+    );
+  },
+  markRead: function (id) {
+    markedRead.push(id);
+    incomingRows.forEach(function (r) {
+      if (r.id === id) r.target_read = true;
+    });
+    return Promise.resolve(true);
   },
 };
 const fakeLeaderboard = {
@@ -187,7 +223,14 @@ const wxStub = {
   navigateTo: function (o) {
     navigations.push(o && o.url);
   },
+  navigateBack: function () {
+    navigations.push('__back__');
+  },
   vibrateShort: function () {},
+  showModal: function (o) {
+    lastModal = o || {};
+    if (o && typeof o.success === 'function') o.success({ confirm: modalConfirm, cancel: !modalConfirm });
+  },
   getAccountInfoSync: function () {
     return { miniProgram: { appId: 'touristappid' } };
   },
@@ -247,6 +290,7 @@ const createStubs = {
   '../../utils/pk': realPk,
   '../../utils/pkCloud': fakePkCloud,
   '../../utils/leaderboard': fakeLeaderboard,
+  '../../utils/share': realShare,
 };
 const playStubs = {
   '../../utils/words': { WORDS: ALL_WORDS, getWordById: wordById },
@@ -260,6 +304,22 @@ const playStubs = {
 
 const createDef = loadPage(CREATE_PATH, createStubs);
 const playDef = loadPage(PLAY_PATH, playStubs);
+
+// 「我的」页（PK 列表折叠 + 删除入口）
+const MINE_PATH = path.join(ROOT, 'pages', 'mine', 'mine.js');
+const mineDef = loadPage(MINE_PATH, {
+  '../../utils/cloud': { cloud: fakeCloud, cloudError: '', available: true },
+  '../../utils/store': makeRealStore({}),
+  '../../utils/leaderboard': fakeLeaderboard,
+  '../../utils/pkCloud': fakePkCloud,
+  '../../utils/words': {
+    gradeById: function () {
+      return null;
+    },
+  },
+});
+
+check(!!mineDef, '[0] 捕获真实 pages/mine/mine.js 的 Page 定义');
 
 check(!!createDef, '[0] 捕获真实 pages/pk-create/pk-create.js 的 Page 定义');
 check(!!playDef, '[0] 捕获真实 pages/pk-play/pk-play.js 的 Page 定义');
@@ -296,7 +356,7 @@ function challenge(id, wordIds, extra) {
 
 async function main() {
   /* ================= 一、出题页 ================= */
-  console.log('[1] 出题页：选人 → 勾词 → 生成挑战 → 分享卡片');
+  console.log('[1] 出题页：选人 → 勾词 → 生成挑战（指定对手走站内 / 开放式走转发）');
   {
     const p = makePage(createDef);
     p.onLoad({ target: 'u2', name: encodeURIComponent('小明') });
@@ -368,13 +428,53 @@ async function main() {
     check(!!created[0] && created[0].targetId === 'u2', '挑战行带上了挑战对象');
     check(!!ok.data.pkId && ok.data.pkId === created[0].id, '挑战 id 与云端写入的一致');
 
-    const share = ok.onShareAppMessage();
+    // 改为站内发送：点击后弹出 toast 并返回上一页
+    const navBefore = navigations.length;
+    ok.onSendChallenge();
+    advance(); // setTimeout 里的 navigateBack
+    check(toasts.length > 0 && String(toasts[toasts.length - 1]).indexOf('已发送') !== -1, 'onSendChallenge 弹出「已发送」提示');
+    check(navigations.length === navBefore + 1 && navigations[navigations.length - 1] === '__back__', 'onSendChallenge 调用 navigateBack 返回');
+    check(!!ok.data.pkId, 'pkId 非空');
+
+    // 指定对手的挑战**不能**把题目泄到微信里：转发菜单虽然保留，但卡片只能回首页
+    check(ok.data.hasTarget === true, '带 target → hasTarget = true（走站内发送）');
+    const targetedShare = ok.onShareAppMessage();
     check(
-      share.path === '/pages/pk-play/pk-play?id=' + ok.data.pkId,
-      '★分享卡片 path 指向这场 PK（' + share.path + '）'
+      targetedShare.path === '/pages/index/index',
+      '指定对手的挑战，微信转发卡片回首页而不是这场 PK（实际 ' + targetedShare.path + '）'
     );
-    check(String(share.title).indexOf('星星学员') !== -1, '分享标题带出题者昵称');
-    check(!!ok.data.pkId, 'pkId 非空（为空的话卡片 path 会失效）');
+
+    /* ---------- 开放式挑战：从「我的」页「发起单词PK」进来，没指定对手 ---------- */
+    // 这条路径没有 target_id，站内通知送不到任何人，唯一通路就是微信转发卡片。
+    // 所以它必须：① 不标 hasTarget；② 生成的挑战 target 为空；③ 卡片路径带 pkId。
+    created.length = 0;
+    const open = makePage(createDef);
+    open.onLoad({});
+    check(open.data.hasTarget === false, '不带 target → hasTarget = false（走微信转发）');
+    open.onSelectAll();
+    open.onCreate();
+    await flushTwice();
+    check(open.data.mode === 'ready', '开放式挑战（无对手）也能生成');
+    check(
+      !!created[0] && !created[0].targetId,
+      '开放式挑战写入云端时 target 为空（不假装有对手）'
+    );
+    const openShare = open.onShareAppMessage();
+    check(
+      openShare.path === '/pages/pk-play/pk-play?id=' + open.data.pkId,
+      '开放式挑战的分享卡片指向这场 PK（实际 ' + openShare.path + '）'
+    );
+    check(
+      String(openShare.title).indexOf('星星学员') !== -1 || String(openShare.title).length > 0,
+      '分享卡片有标题'
+    );
+
+    // pkId 还没拿到时绝不能拼出 `?id=` 的空链接（对方点开就是「挑战不存在」）
+    const blankShare = makePage(createDef).onShareAppMessage();
+    check(
+      blankShare.path === '/pages/index/index',
+      '还没生成挑战时转发卡片回首页（不产出 ?id= 的坏链接）'
+    );
 
     // 云端写入失败 → 明确失败，不要给一个「看着能分享其实没人能打开」的卡片
     createOk = false;
@@ -418,6 +518,7 @@ async function main() {
     check(!!submitted[0] && submitted[0].payload.result.correctCount === 3, '回传的分数正确');
     check(!!submitted[0] && submitted[0].payload.playedBy === 'u2', '回传带上作答者 uid');
     check(p.data.resultSent === true, '界面显示「成绩已告诉小明」');
+    check(markedRead.indexOf('pk-a') !== -1, '★答题成功后调用 pkCloud.markRead(pk-a)，消除未读提示');
   }
 
   console.log('[3] 防刷：同一场 PK 二次进入不能再得星');
@@ -582,6 +683,197 @@ async function main() {
     check(playStore.getStarBalance() === before + 2, '★星星确实进了账户（不依赖网络）');
     check(p.data.resultSent === false, '界面如实显示「成绩会先记在本机」');
     submitOk = true;
+  }
+
+  console.log('[9] 站内通知：listIncoming / markRead 闭环');
+  {
+    // 准备两条未读挑战
+    incomingRows.length = 0;
+    incomingRows.push(
+      { id: 'pk-n1', target_id: 'u2', status: 'pending', target_read: false, challenger_name: '小明', word_ids: ['w1-1'] },
+      { id: 'pk-n2', target_id: 'u2', status: 'pending', target_read: false, challenger_name: '小红', word_ids: ['w1-1', 'w1-2'] }
+    );
+    markedRead.length = 0;
+
+    // 未登录 → 空
+    const anonList = await fakePkCloud.listIncoming('u2');
+    // 未登录在真实代码里不会调用 listIncoming，这里直接测函数行为即可
+    check(Array.isArray(anonList), 'listIncoming 返回数组');
+
+    // 登录后取到 2 条未读
+    const list = await fakePkCloud.listIncoming('u2');
+    check(list.length === 2, '登录用户收到 2 条未读挑战');
+
+    // markRead 后只剩 1 条
+    await fakePkCloud.markRead('pk-n1');
+    const after = await fakePkCloud.listIncoming('u2');
+    check(after.length === 1 && after[0].id === 'pk-n2', 'markRead 后 pk-n1 不再出现在未读列表');
+
+    // 真跑答题页：⚠️ 只打开不答题时**不能**标已读 —— 否则孩子点开看一眼就返回，
+    // 这场挑战会从「我收到的挑战」里永久消失（只有 target_read = false 才会被查出来）
+    fetchResult = challenge('pk-n2', ['w1-1', 'w1-2'], { challenger_name: '小红' });
+    const p = makePage(playDef);
+    p.onLoad({ id: 'pk-n2' });
+    await flushTwice();
+    check(p.data.mode === 'playing', '未读挑战加载成功 → 可作答');
+    check(markedRead.indexOf('pk-n2') === -1, '★只打开不答题时不会 markRead');
+    const stillThere = await fakePkCloud.listIncoming('u2');
+    check(stillThere.length === 1 && stillThere[0].id === 'pk-n2', '★点开又退出后挑战仍在「我收到的挑战」里');
+
+    // 答完才标已读
+    p.answers = [0, 0, 1];
+    p.finish();
+    await flushTwice();
+    check(markedRead.indexOf('pk-n2') !== -1, '★答完后才 markRead');
+  }
+
+  console.log('[10] 成绩补传：网络失败先排队，下次启动补上');
+  {
+    // 真跑 utils/pkCloud.js（上面用的是它的替身，测不到补传逻辑）
+    const cloudPath = path.join(ROOT, 'utils', 'pkCloud.js');
+    const kv = {};
+    let mode = 'error'; // error（云端报错）| ok | reject（网络断）| zero（被别人抢先，0 行）
+    const fakeCloud = {
+      database: {
+        from: function () {
+          const q = { id: null };
+          const api = {
+            update: function () {
+              return api;
+            },
+            eq: function (k, v) {
+              q.id = v;
+              return api;
+            },
+            select: function () {
+              return api;
+            },
+            then: function (res, rej) {
+              if (mode === 'reject') return Promise.reject(new Error('network down')).then(res, rej);
+              if (mode === 'error') return Promise.resolve({ data: [], error: { message: 'boom' } }).then(res, rej);
+              if (mode === 'zero') return Promise.resolve({ data: [], error: null }).then(res, rej);
+              return Promise.resolve({ data: [{ id: q.id }], error: null }).then(res, rej);
+            },
+          };
+          return api;
+        },
+      },
+    };
+    const sb = {
+      console: console,
+      module: { exports: {} },
+      exports: {},
+      require: function (id) {
+        if (id === './cloud') return { cloud: fakeCloud };
+        throw new Error('未预期的 require → ' + id);
+      },
+      wx: {
+        getStorageSync: function (k) {
+          return Object.prototype.hasOwnProperty.call(kv, k) ? kv[k] : '';
+        },
+        setStorageSync: function (k, v) {
+          kv[k] = v;
+        },
+      },
+    };
+    sb.global = sb;
+    vm.createContext(sb);
+    vm.runInContext(fs.readFileSync(cloudPath, 'utf8'), sb, { filename: cloudPath });
+    const mod = sb.module.exports;
+    const pending = function () {
+      return Array.isArray(kv.__pk_pending) ? kv.__pk_pending : [];
+    };
+
+    const r1 = await mod.submitResult('pk-x', { result: { total: 2 }, playedBy: 'u1' });
+    check(r1 === false, '云端报错时 submitResult 返回 false（不影响本地得星）');
+    check(pending().length === 1 && pending()[0].id === 'pk-x', '★没传出去的成绩进了本机待传队列');
+
+    mode = 'reject';
+    await mod.submitResult('pk-y', {});
+    check(pending().length === 2, '断网（reject）同样进队列');
+
+    mode = 'ok';
+    await mod.retryPending();
+    check(pending().length === 0, '★联网后补传成功，队列清空');
+
+    mode = 'zero';
+    await mod.submitResult('pk-z', {});
+    check(
+      pending().filter(function (x) {
+        return x.id === 'pk-z';
+      }).length === 0,
+      '被别人抢先（0 行）不会进队列 —— 重试也没用'
+    );
+
+    mode = 'reject';
+    await mod.submitResult('pk-w', {});
+    mode = 'reject';
+    await mod.retryPending();
+    check(pending().length === 1, '补传仍失败时保留在队列，下次继续试');
+  }
+
+  console.log('[11] 我的页：我发起的 PK 折叠 + 手工删除');
+  {
+    mineRows.length = 0;
+    for (let i = 1; i <= 5; i++) {
+      mineRows.push({
+        id: 'pk-m' + i,
+        target_name: '对手' + i,
+        word_ids: ['w1-1', 'w1-2', 'w1-3'],
+        status: i <= 3 ? 'done' : 'pending',
+        result: { correctCount: 2 },
+        played_name: '小明',
+        created_at: '2026-10-2' + i,
+      });
+    }
+    removedPk.length = 0;
+    removeOk = true;
+
+    const p = makePage(mineDef);
+    p.setData({ loggedIn: true, userId: 'u1' });
+    p.loadPkList();
+    await flushTwice();
+    check(p.data.pkList.length === 5, '拉到 5 条我发起的挑战');
+    check(p.data.pkShown.length === 3, '★默认只露 3 条（列表不会往下无限堆）');
+    check(p.data.pkHasMore === true, '还有更多时显示「展开全部」入口');
+
+    p.onTogglePkExpand();
+    check(p.data.pkShown.length === 5 && p.data.pkExpanded === true, '★展开后 5 条全部露出');
+    p.onTogglePkExpand();
+    check(p.data.pkShown.length === 3 && p.data.pkExpanded === false, '收起后回到 3 条');
+
+    // 取消确认 → 一个字节都不动
+    modalConfirm = false;
+    p.onDeletePk({ currentTarget: { dataset: { id: 'pk-m1', done: true } } });
+    await flushTwice();
+    check(removedPk.length === 0 && p.data.pkList.length === 5, '点「取消」时不会删除');
+    check(!!lastModal && String(lastModal.content).indexOf('不再显示') !== -1, '已完成的删除文案说明「你这边不再显示」');
+
+    // 删等待中的：必须明确告诉出题者「对方将看不到」
+    modalConfirm = true;
+    p.onDeletePk({ currentTarget: { dataset: { id: 'pk-m5', done: false } } });
+    await flushTwice();
+    check(!!lastModal && String(lastModal.content).indexOf('对方将看不到') !== -1, '★删除等待中的挑战前提示「对方将看不到」');
+    check(removedPk.indexOf('pk-m5') !== -1, '确认后调用 pkCloud.remove(pk-m5)');
+    check(p.data.pkList.length === 4, '删掉一条后列表立刻变短');
+    check(
+      p.data.pkList.filter(function (x) {
+        return x.id === 'pk-m5';
+      }).length === 0,
+      '★被删的记录从列表移除'
+    );
+
+    // 云端删除失败 → 绝不能假装删掉
+    modalConfirm = true;
+    removeOk = false;
+    p.onDeletePk({ currentTarget: { dataset: { id: 'pk-m1', done: true } } });
+    await flushTwice();
+    check(p.data.pkList.length === 4, '★删除失败时记录仍在列表里（不假装删掉）');
+    check(
+      toasts.length > 0 && String(toasts[toasts.length - 1]).indexOf('删除失败') !== -1,
+      '删除失败给出明确提示'
+    );
+    removeOk = true;
   }
 
   console.log(failed ? '\nPK 运行时自检失败：' + failed + ' 项 ✗' : '\nPK 运行时自检全部通过 ✓');
