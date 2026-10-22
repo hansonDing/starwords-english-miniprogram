@@ -55,5 +55,11 @@
     ]
   },
   "lazyCodeLoading": "requiredComponents",
-  "sitemapLocation": "sitemap.json"
+  "sitemapLocation": "sitemap.json",
+  "plugins": {
+    "ihearing-eval": {
+      "version": "0.0.6",
+      "provider": "wx63d6102e26f0a3f8"
+    }
+  }
 }

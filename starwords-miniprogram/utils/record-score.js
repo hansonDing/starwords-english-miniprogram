@@ -1,17 +1,24 @@
-// 跟读录音的轻量自动评分（纯本地，无需网络）
-// 思路：解析录音 WAV（16bit PCM），统计
+// 跟读录音的自动评分：优先使用智聆口语评测（SOE）插件返回的发音准确度，
+// 插件不可用时降级为本地 WAV 能量评分。
+//
+// 本地评分思路：解析录音 WAV（16bit PCM），统计
 //   1) 时长 duration —— 太短说明没读完，太长说明夹了别的话
 //   2) 整体响度 rms —— 太轻说明没发声
 //   3) 有声占比 voicedRatio —— 有 20ms 窗口响度超过阈值的比例
-// 三者合成 0~100 的分数。这是"开口程度/节奏"评分，
-// 不是 AI 发音评测（那需要接入第三方语音评测服务）。
+// 三者合成 0~100 的分数。这是"开口程度/节奏"评分。
 //
 // 星级换算（2026-10-15 起，界面只显示星星，不显示分数）：
-//   3 星（>60 分）：完整、清楚地把单词读出来了 —— 正常读完的都落在这档
-//   2 星（>40 分）：开口读了，但有明显问题（读得太长 / 节奏或音量差一截）
-//   1 星（>30 分）：读了，但没读完（时长太短）
-//   0 星（≤30 分）：完全没听到声音
-// 注：正常评分路径的分数被 clamp 在 45~96，所以「真开口读了」至少 2 星；
+//   SOE 评分（pron_accuracy）：
+//     >80 → 3 星（读对了）
+//     >55 → 2 星（基本对，但有小问题）
+//     >30 → 1 星（开口读了，但差异较大）
+//     ≤30 / 无结果 → 1 星（开口鼓励，不是"读对"）
+//   本地能量评分：
+//     3 星（>60 分）：完整、清楚地把单词读出来了
+//     2 星（>40 分）：开口读了，但有明显问题
+//     1 星（>30 分）：读了，但没读完（时长太短）
+//     0 星（≤30 分）：完全没听到声音
+// 注：正常本地评分路径的分数被 clamp 在 45~96，所以「真开口读了」至少 2 星；
 //     1 星只给"读太短没读完"，0 星只给"压根没出声"。四档语义：
 //     没出声 / 没读完 / 读了但不够好 / 读对了。
 function clamp(n, lo, hi) {
@@ -145,4 +152,34 @@ function gradeFile(filePath) {
   });
 }
 
-module.exports = { gradeFile: gradeFile };
+// 智聆口语评测（SOE）结果 → 星级。
+// soeResult 可能是插件 onStop 返回的整个对象，也可能是 result 子对象。
+// 字段名兼容大小写：pron_accuracy / PronAccuracy / pronAccuracy。
+function gradeBySoe(word, soeResult) {
+  // word 仅保留用于未来扩展（如按单词长度微调阈值），当前评分不依赖它
+  void word;
+  var result = soeResult && (soeResult.result || soeResult);
+  var accuracy = 0;
+  if (result) {
+    accuracy =
+      parseFloat(result.pron_accuracy || result.PronAccuracy || result.pronAccuracy || 0) || 0;
+  }
+  // 孩子已经开口尝试，最低给 1 星鼓励；0 星只留给"完全没声音"的本地能量评分路径
+  if (accuracy > 80) {
+    return { score: Math.round(accuracy), level: 'great', starCount: 3, message: '读得真棒！继续加油 🎉' };
+  }
+  if (accuracy > 55) {
+    return { score: Math.round(accuracy), level: 'good', starCount: 2, message: '读出来啦！再试一次会更棒' };
+  }
+  if (accuracy > 30) {
+    return { score: Math.round(accuracy), level: 'low', starCount: 1, message: '再大声、清楚地读一遍试试' };
+  }
+  return {
+    score: accuracy > 0 ? Math.round(accuracy) : 30,
+    level: 'low',
+    starCount: 1,
+    message: '没有听清，按住麦克风再读一遍吧',
+  };
+}
+
+module.exports = { gradeFile: gradeFile, gradeBySoe: gradeBySoe };

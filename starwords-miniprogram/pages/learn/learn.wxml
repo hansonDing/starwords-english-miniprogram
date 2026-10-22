@@ -62,7 +62,7 @@
       </view>
       <text class="score-msg">{{autoMsg}}</text>
     </view>
-    <view class="btn-ghost" wx:if="{{recorded}}" bindtap="onPlayBack">
+    <view class="btn-ghost" wx:if="{{recorded && recordPath}}" bindtap="onPlayBack">
       <text>{{playingBack ? '🔈 播放中…' : '▶ 听听自己的声音'}}</text>
     </view>
     <text class="speak-hint">听完示例 → 按住麦克风跟读 → 播放对比</text>

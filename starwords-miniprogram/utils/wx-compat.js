@@ -74,6 +74,17 @@
     };
   }
 
+  // 插件：预览模拟器没有 requirePlugin 能力。
+  // learn 页会探测插件是否存在，不存在则降级到本地录音器。
+  if (typeof requirePlugin !== 'function') {
+    try {
+      // eslint-disable-next-line no-global-assign
+      requirePlugin = function () { return null; };
+    } catch (e) {
+      // strict mode 下不能给未声明变量赋值，忽略；业务代码有 try-catch 兜底
+    }
+  }
+
   // 录音：预览模拟器没有录音能力。
   // start() 触发 onError，learn 页会提示「录音不可用，可以直接跳过跟读」，
   // 用户点「我读对了」即可继续，不会卡在跟读这一步。

@@ -22,7 +22,7 @@ function loadScoreModule() {
   m.filename = file;
   m.paths = Module._nodeModulePaths(path.dirname(file));
   m._compile(
-    fs.readFileSync(file, 'utf8') + '\nmodule.exports.grade = grade;\nmodule.exports.starsFor = starsFor;\n',
+    fs.readFileSync(file, 'utf8') + '\nmodule.exports.grade = grade;\nmodule.exports.starsFor = starsFor;\nmodule.exports.gradeBySoe = gradeBySoe;\n',
     file
   );
   return m.exports;
@@ -114,6 +114,28 @@ console.log('[3] 四档语义：没出声 0 星 / 没读完 1 星 / 真开口读
   // 正常评分路径的分数下限被 clamp 在 45 → 任何"读到合理时长 + 有声音"的录音都不会掉到 1 星
   const low = rs.grade(makeWav(3.2, 0.5, false));
   check(low.starCount >= 2, '卡在评分路径下限的录音仍是 2 星（' + low.score + ' 分）');
+}
+
+console.log('[4] 智聆口语评测（SOE）评分映射');
+{
+  const soeCases = [
+    ['准确度 95 → 3 星', { pron_accuracy: 95 }, 3],
+    ['准确度 81 → 3 星', { pron_accuracy: 81 }, 3],
+    ['准确度 80 → 2 星（临界）', { pron_accuracy: 80 }, 2],
+    ['准确度 56 → 2 星', { pron_accuracy: 56 }, 2],
+    ['准确度 55 → 1 星（临界）', { pron_accuracy: 55 }, 1],
+    ['准确度 31 → 1 星', { pron_accuracy: 31 }, 1],
+    ['准确度 30 → 1 星（开口鼓励）', { pron_accuracy: 30 }, 1],
+    ['准确度 5 → 1 星（开口鼓励）', { pron_accuracy: 5 }, 1],
+    ['无结果 → 1 星（开口鼓励）', {}, 1],
+    ['result 子对象 + PronAccuracy 大小写兼容', { result: { PronAccuracy: 92 } }, 3],
+    ['result 子对象 + pronAccuracy 驼峰兼容', { result: { pronAccuracy: 72 } }, 2],
+  ];
+  for (const [label, soeResult, want] of soeCases) {
+    const r = rs.gradeBySoe('cat', soeResult);
+    check(r.starCount === want, `${label} → ${r.score} 分 / ${r.starCount} 星（期望 ${want} 星）`);
+    check(r.starCount >= 1, `${label}：SOE 路径最低 1 星鼓励`);
+  }
 }
 
 console.log(failed ? `\n跟读星级自检失败：${failed} 项 ✗` : '\n跟读星级自检全部通过 ✓');

@@ -39,10 +39,12 @@ Page({
     playingBack: false,
     spokeWell: false,
     wordScore: 0,
-    // 自动评分（录音结束后本地分析得出，界面只显示星星）
+    // 自动评分（录音结束后由智聆插件或本地能量分析得出，界面只显示星星）
     autoLevel: '',
     autoStarCount: 0,
     autoMsg: '',
+    // 是否有本地录音文件可供回放（智聆插件不保证返回录音路径）
+    recordPath: '',
     // 配对闯关（第 4 步）：左列单词 / 右列打乱的中文含义
     matchLeft: [],
     matchRight: [],
@@ -160,29 +162,66 @@ Page({
   onImgError() {},
 
   /* ---------- 录音跟读 ---------- */
+  // 优先使用智聆口语评测插件：录音 + 发音准确度评分；
+  // 插件不可用时降级到本地 wx.getRecorderManager（WAV 能量评分）。
   initRecorder() {
+    this.recorderType = 'local';
+    if (this.tryInitPluginRecorder()) return;
+    this.initLocalRecorder();
+  },
+
+  tryInitPluginRecorder() {
+    try {
+      if (typeof requirePlugin !== 'function') return false;
+      var plugin = requirePlugin('ihearing-eval');
+      if (!plugin || typeof plugin.getRecordRecognitionManager !== 'function') return false;
+      var mgr = plugin.getRecordRecognitionManager();
+      if (!mgr || typeof mgr.start !== 'function') return false;
+      this.recorder = mgr;
+      this.recorderType = 'plugin';
+      var self = this;
+      mgr.onStart = function () {
+        self.setData({ recording: true, recorded: false, recordPath: '' });
+      };
+      mgr.onStop = function (res) {
+        self.handlePluginStop(res || {});
+      };
+      mgr.onError = function (res) {
+        self.handlePluginError(res || {});
+      };
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  initLocalRecorder() {
     this.recorder = wx.getRecorderManager();
-    this.recorder.onStart(() => {
-      this.setData({ recording: true, recorded: false });
+    this.recorderType = 'local';
+    var self = this;
+    this.recorder.onStart(function () {
+      self.setData({ recording: true, recorded: false, recordPath: '' });
     });
-    this.recorder.onStop((res) => {
-      this.recordPath = res.tempFilePath || null;
-      this.setData({ recording: false, recorded: !!this.recordPath });
-      if (this.recordPath) this.gradeRecording(this.recordPath);
+    this.recorder.onStop(function (res) {
+      var path = res && res.tempFilePath ? res.tempFilePath : '';
+      self.setData({ recording: false, recorded: !!path, recordPath: path });
+      self.recordPath = path;
+      if (path) self.gradeRecording(path);
     });
-    this.recorder.onError(() => {
-      this.setData({ recording: false });
+    this.recorder.onError(function () {
+      self.setData({ recording: false });
       wx.showToast({ title: '录音不可用，可以直接跳过跟读', icon: 'none' });
     });
   },
 
   // 录音结束后自动评分：本地分析时长/响度/有声占比 → 换算成 0~3 颗星（0 星 = 完全没听到声音）
   gradeRecording(path) {
-    recordScore.gradeFile(path).then((r) => {
+    var self = this;
+    recordScore.gradeFile(path).then(function (r) {
       if (!r) return; // 解析失败就不显示评分，不影响原有流程
       // Step2 允许反复重录，星星按**最好的一次**计入账户（不是最后一次）
-      if (r.starCount > this.wordBestStars) this.wordBestStars = r.starCount;
-      this.setData({
+      if (r.starCount > self.wordBestStars) self.wordBestStars = r.starCount;
+      self.setData({
         autoLevel: r.level,
         autoStarCount: r.starCount,
         autoMsg: r.message,
@@ -190,12 +229,47 @@ Page({
     });
   },
 
+  // 智聆插件返回结果：优先用 SOE 准确度评分，拿不到录音路径就不显示回放按钮
+  handlePluginStop(res) {
+    this.setData({ recording: false, recorded: true });
+    var path = res.tempFilePath || res.voicePath || res.filePath || '';
+    this.recordPath = path;
+    this.setData({ recordPath: path });
+
+    var r = recordScore.gradeBySoe(this.data.word.word, res);
+    if (r.starCount > this.wordBestStars) this.wordBestStars = r.starCount;
+    this.setData({
+      autoLevel: r.level,
+      autoStarCount: r.starCount,
+      autoMsg: r.message,
+    });
+  },
+
+  // 智聆插件失败：降级到本地录音器，提示用户再试一次
+  handlePluginError(res) {
+    this.setData({ recording: false });
+    wx.showToast({
+      title: (res && res.msg) || '语音评测不可用，将使用本地评分',
+      icon: 'none',
+    });
+    this.initLocalRecorder();
+  },
+
   onStartRecord() {
     if (this.data.recording) return;
     // 重录 / 新录：先清掉上一次的星级反馈，避免旧星星残留
-    this.setData({ recorded: false, spokeWell: false, autoLevel: '', autoStarCount: 0, autoMsg: '' });
-    // 用 WAV 格式：包内可解析 PCM，供自动评分分析
-    this.recorder.start({ duration: 6000, format: 'wav', sampleRate: 16000, numberOfChannels: 1 });
+    this.setData({ recorded: false, spokeWell: false, autoLevel: '', autoStarCount: 0, autoMsg: '', recordPath: '' });
+    if (this.recorderType === 'plugin') {
+      // 儿童宽松模式：scoreCoeff 1.0；单词模式；content 为目标单词
+      this.recorder.start({
+        content: this.data.word.word,
+        evalMode: 'word',
+        scoreCoeff: 1.0,
+      });
+    } else {
+      // 用 WAV 格式：包内可解析 PCM，供本地能量评分分析
+      this.recorder.start({ duration: 6000, format: 'wav', sampleRate: 16000, numberOfChannels: 1 });
+    }
   },
 
   onStopRecord() {
